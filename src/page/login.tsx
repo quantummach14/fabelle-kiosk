@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Card, Typography, Input, Button, message } from "antd";
+import { Card, Typography, Input, Button } from "antd";
 import { Mail, Lock } from "lucide-react"; // Changed from User to Mail
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -105,12 +104,6 @@ const LoginForm = () => {
               </Button>
             </div>
           </form>
-
-          <div className="mt-6 text-center">
-            <Text className="text-gray-500">
-              Demo credentials: admin@example.com / password
-            </Text>
-          </div>
         </div>
       </Card>
     </div>

@@ -4,13 +4,16 @@ import { message } from "antd";
 const handleAPIError = (error) => {
   if (error.response?.status === 403 || error.response?.status === 401) {
     localStorage.clear();
-    message.error(error.response.data.message);
+    message.error("Your session has expired. Reloading...");
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
     throw {
-      message: error.response.data.message,
+      message: "Unauthorized access. Session expired.",
     };
   }
   throw {
-    message: error.response?.data?.message,
+    message: error.response?.data?.message || "Something went wrong.",
   };
 };
 

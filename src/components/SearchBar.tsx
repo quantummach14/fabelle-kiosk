@@ -38,9 +38,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
           />
         </div>
         
-        <div className="w-px h-12 bg-gray-200 mx-6"></div>
+        {/* <div className="w-px h-12 bg-gray-200 mx-6"></div> */}
         
-        <div className="w-64 flex items-center">
+        {/* <div className="w-64 flex items-center">
           <Select
             value={selectedCategory}
             onChange={onCategoryChange}
@@ -63,7 +63,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
               </Option>
             ))}
           </Select>
-        </div>
+        </div> */}
       </div>
     </div>
   );

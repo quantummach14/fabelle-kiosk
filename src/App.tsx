@@ -4,6 +4,7 @@ import Login from "./page/login";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PublicRoute } from "./components/PublicRoute";
+import { SocketProvider } from "./socket/socket-context";
 
 function App() {
   const queryClient = new QueryClient({
@@ -32,7 +33,7 @@ function App() {
           path="/home"
           element={
             <ProtectedRoute>
-              <Home />
+                <Home />
             </ProtectedRoute>
           }
         />
