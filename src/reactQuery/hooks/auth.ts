@@ -15,7 +15,7 @@ export const useSignIn = () => {
       // const userInfo = JSON.parse(localStorage.getItem("userInfo"));
       queryClient.invalidateQueries({ queryKey: ["AUTH-ME"] });
       message.success("You have successfully logged in.");
-      navigate("/home");
+      navigate(`/home?location=${data?.user?.location}`);
     },
     onError: (error) => {
       message.error(error.message);

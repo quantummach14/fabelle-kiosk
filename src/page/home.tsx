@@ -32,7 +32,7 @@ import {
 import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useProductListData } from "../reactQuery/hooks/product";
 import NoImage from "../assets/noProductImage.png";
 import { FullScreenSpin } from "../components/full-spin";
@@ -61,63 +61,6 @@ interface UserInfo {
 type PaymentMethod = "card" | "online" | "other" | null;
 type AppStep = "products" | "userInfo" | "payment" | "confirmation";
 
-const products: Product[] = [
-  {
-    id: 1,
-    name: "Premium Coffee Blend",
-    price: 24.99,
-    image:
-      "https://images.pexels.com/photos/1695052/pexels-photo-1695052.jpeg?auto=compress&cs=tinysrgb&w=400",
-    category: "Coffee",
-    description: "Rich, aromatic blend with notes of chocolate and caramel",
-  },
-  {
-    id: 2,
-    name: "Artisan Pastries",
-    price: 8.5,
-    image:
-      "https://images.pexels.com/photos/1775043/pexels-photo-1775043.jpeg?auto=compress&cs=tinysrgb&w=400",
-    category: "Pastries",
-    description: "Freshly baked daily with premium ingredients",
-  },
-  {
-    id: 3,
-    name: "Specialty Tea Collection",
-    price: 19.99,
-    image:
-      "https://images.pexels.com/photos/1638280/pexels-photo-1638280.jpeg?auto=compress&cs=tinysrgb&w=400",
-    category: "Tea",
-    description: "Curated selection of premium loose leaf teas",
-  },
-  {
-    id: 4,
-    name: "Fresh Sandwiches",
-    price: 12.75,
-    image:
-      "https://images.pexels.com/photos/1600727/pexels-photo-1600727.jpeg?auto=compress&cs=tinysrgb&w=400",
-    category: "Food",
-    description: "Made to order with locally sourced ingredients",
-  },
-  {
-    id: 5,
-    name: "Gourmet Salads",
-    price: 14.25,
-    image:
-      "https://images.pexels.com/photos/1059905/pexels-photo-1059905.jpeg?auto=compress&cs=tinysrgb&w=400",
-    category: "Food",
-    description: "Fresh, seasonal ingredients with house-made dressings",
-  },
-  {
-    id: 6,
-    name: "Smoothie Bowls",
-    price: 11.99,
-    image:
-      "https://images.pexels.com/photos/1640774/pexels-photo-1640774.jpeg?auto=compress&cs=tinysrgb&w=400",
-    category: "Healthy",
-    description: "Nutritious blend topped with fresh fruits and granola",
-  },
-];
-
 const getCategoryIcon = (category: string) => {
   switch (category) {
     case "Coffee":
@@ -131,9 +74,11 @@ const getCategoryIcon = (category: string) => {
   }
 };
 
-const loginUserInfo = JSON.parse(localStorage.getItem("userInfo"));
-
 const Home = () => {
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const selectedLocation = queryParams.get("location");
+
   const navigate = useNavigate();
   const { mutate, data, isPending } = useProductListData();
   const totalItems = data?.total || 0;
@@ -257,11 +202,11 @@ const Home = () => {
   };
 
   useEffect(() => {
-    mutate({
-      location: loginUserInfo?.location,
-      limit: apiPayload.limit,
-      offset: apiPayload.offset,
-    });
+      mutate({
+        location: selectedLocation,
+        limit: apiPayload.limit,
+        offset: apiPayload.offset,
+      });
   }, [apiPayload]);
 
   useEffect(() => {
@@ -276,7 +221,6 @@ const Home = () => {
       })) || [];
     setProductList((pre) => [...pre, ...updateProductList]);
   }, [data]);
-  console.log(cart, "cart");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
