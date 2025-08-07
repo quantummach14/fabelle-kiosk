@@ -1,16 +1,13 @@
-import { webcrypto } from 'crypto';
+// 👇 Must come FIRST — before anything else
+import './vite.crypto.patch';
 
-if (!globalThis.crypto) {
-  globalThis.crypto = webcrypto as any;
-}
-
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: "/fabellekiosk-frontend/app",
+  base: '/fabellekiosk-frontend/app',
   optimizeDeps: {
-    exclude: ["lucide-react"],
+    exclude: ['lucide-react'],
   },
 });
