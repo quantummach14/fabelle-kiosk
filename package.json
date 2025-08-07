@@ -1,7 +1,7 @@
 {
   "name": "vite-react-typescript-starter",
   "private": true,
-  "homepage": "/fabelle-kiosk/app",
+  "homepage": "/fabellekiosk-frontend/app",
   "version": "0.0.0",
   "type": "module",
   "scripts": {

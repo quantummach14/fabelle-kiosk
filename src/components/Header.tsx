@@ -23,7 +23,7 @@ const Header = ({
   handleLogout,
 }: HeaderProps) => {
   return (
-    <div className="bg-[#2d1603] text-white py-6 px-8 shadow-lg">
+<div className="bg-gradient-to-br from-[#2d1603] via-[#6b3e26] to-[#b87333] text-white py-6 px-8 shadow-lg">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-4">
           {currentStep !== "products" && (
