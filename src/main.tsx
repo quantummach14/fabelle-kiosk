@@ -31,7 +31,7 @@ const theme = {
 
 createRoot(document.getElementById("root")!).render(
   <ConfigProvider theme={theme}>
-    <BrowserRouter basename="/fabelle-kiosk/app">
+    <BrowserRouter basename="/fabellekiosk-frontend/app">
       <App />
     </BrowserRouter>
   </ConfigProvider>
