@@ -1,7 +1,7 @@
 import { Badge, Button, Typography } from "antd";
 import { ArrowLeft, LogOut, ShoppingCart } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
-
+import Logo from "../assets/logo.png";
 const { Title } = Typography;
 
 type AppStep = "products" | "userInfo" | "payment" | "confirmation";
@@ -23,10 +23,13 @@ const Header = ({
   handleLogout,
 }: HeaderProps) => {
   return (
-<div className="bg-gradient-to-br from-[#2d1603] via-[#6b3e26] to-[#b87333] text-white py-6 px-8 shadow-lg">
+    <div className="bg-[#2d1603] text-white py-6 px-8 shadow-lg">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-4">
-          {currentStep !== "products" && (
+          <div className="flex items-center justify-center mx-auto">
+            <img src={Logo} className="w-40 h-10 object-contain" />
+          </div>
+          {/* {currentStep !== "products" && (
             <Button
               type="text"
               size="large"
@@ -38,10 +41,7 @@ const Header = ({
               }}
               className="text-white  border-none"
             />
-          )}
-          <Title level={2} className="!text-white !mb-0">
-            Fabelle Kiosk
-          </Title>
+          )} */}
         </div>
 
         <div className="flex items-center gap-4">
