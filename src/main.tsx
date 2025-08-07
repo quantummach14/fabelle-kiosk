@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { ConfigProvider } from "antd";
+import { BrowserRouter } from "react-router-dom";
 
 const theme = {
   token: {
@@ -27,8 +28,11 @@ const theme = {
     },
   },
 };
+
 createRoot(document.getElementById("root")!).render(
   <ConfigProvider theme={theme}>
-    <App />
+    <BrowserRouter basename="/fabelle-kiosk/app">
+      <App />
+    </BrowserRouter>
   </ConfigProvider>
 );
