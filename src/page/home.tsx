@@ -12,6 +12,7 @@ import {
   Col,
   Space,
   message,
+  Checkbox,
 } from "antd";
 import {
   ShoppingCart,
@@ -29,13 +30,18 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useProductListData } from "../reactQuery/hooks/product";
+import {
+  usePaymentLinkSend,
+  useProductListData,
+} from "../reactQuery/hooks/product";
 import NoImage from "../assets/noProductImage.png";
 import { FullScreenSpin } from "../components/full-spin";
+import { v4 as uuidv4 } from "uuid";
+import { io } from "socket.io-client";
 
 const { Title, Text } = Typography;
 const { Step } = Steps;
@@ -73,6 +79,7 @@ const getCategoryIcon = (category: string) => {
       return <Coffee className="w-5 h-5" />;
   }
 };
+const loginUserInfo = JSON.parse(localStorage.getItem("userInfo"));
 
 const Home = () => {
   const location = useLocation();
@@ -82,13 +89,13 @@ const Home = () => {
   const navigate = useNavigate();
   const { mutate, data, isPending } = useProductListData();
   const totalItems = data?.total || 0;
-  console.log(totalItems, "totalItems");
 
   const [productsList, setProductList] = useState([]);
   const [apiPayload, setApiPayload] = useState({
     limit: 10,
     offset: 0,
   });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -123,13 +130,17 @@ const Home = () => {
   const addToCart = (product: Product) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id);
+
       if (existingItem) {
+        message.success(`${product.name} quantity increased in cart`);
         return prevCart.map((item) =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
+
+      message.success(`${product.name} added to cart`);
       return [...prevCart, { ...product, quantity: 1 }];
     });
   };
@@ -163,11 +174,67 @@ const Home = () => {
     setUserInfo(values);
     setCurrentStep("payment");
   };
-
+  const [cancelWaiting, setCancelWaiting] = useState(false);
+  const [paymentLoader, setPaymentLoader] = useState(false);
+  const orderId = "ORD" + uuidv4();
+  const clientId = "CLIENT" + uuidv4();
+  // PAYMENT LINK SENT
+  const { mutate: paymentLinkSentMutate, isPending: paymentLinkSentLoader } =
+    usePaymentLinkSend(setPaymentLoader);
   const handlePaymentSubmit = () => {
+    setPaymentLoader(true);
     if (selectedPayment) {
-      setCurrentStep("confirmation");
+      const values = form.getFieldsValue(true); // ✅ get all form data
+      const payload = {
+        orderId,
+        cust_name: values.name,
+        cust_phone: values.mobile,
+        cust_email: values.email,
+        // amount: getTotalPrice(),
+        amount: 1,
+        clientId,
+      };
+      paymentLinkSentMutate(payload);
+      // setCurrentStep("confirmation");
     }
+  };
+
+  let cancelOrderSocket = useRef(null);
+  const sendPaymentLinkHandler = () => {
+    setCancelWaiting(true);
+    cancelOrderSocket.current = io("https://fabelle-stage.pep1.in", {
+      path: "/fabelle-backend/api/socket.io",
+    });
+    cancelOrderSocket.current.on("connect", () => {
+      debugger;
+      cancelOrderSocket.current.emit("register", {
+        clientId: clientId,
+      }); // Register client ID on connection
+    });
+    cancelOrderSocket.current.on("on_register", (msg) => {
+      if (msg === "success") {
+        (async () => {
+          handlePaymentSubmit();
+        })();
+      }
+    });
+    let timeoutId2 = setTimeout(() => {
+      setCancelWaiting(false);
+      // toast.error("Cannot cancel at the moment, try again later");
+      cancelOrderSocket.current.emit("disconnectClient", clientId);
+      cancelOrderSocket.current.disconnect();
+      cancelOrderSocket.current = null;
+    }, 30500);
+    // on_update
+    cancelOrderSocket.current.on("on_payment_response", (msg) => {
+      setPaymentLoader(false);
+      clearTimeout(timeoutId2);
+      console.log(msg, "mssg");
+      // toast.success("Items Cancelled Successfully");
+      cancelOrderSocket.current.emit("disconnectClient", clientId);
+      cancelOrderSocket.current.disconnect();
+      cancelOrderSocket.current = null;
+    });
   };
 
   const resetApp = () => {
@@ -202,11 +269,11 @@ const Home = () => {
   };
 
   useEffect(() => {
-      mutate({
-        location: selectedLocation,
-        limit: apiPayload.limit,
-        offset: apiPayload.offset,
-      });
+    mutate({
+      location: selectedLocation || loginUserInfo.location,
+      limit: apiPayload.limit,
+      offset: apiPayload.offset,
+    });
   }, [apiPayload]);
 
   useEffect(() => {
@@ -214,7 +281,7 @@ const Home = () => {
       data?.data?.map((item) => ({
         id: item?.id,
         name: item?.sku_name || "N/A",
-        price: Number(item?.selling_price) || 0,
+        price: Number(item?.mrp) || 0,
         image: item?.image || NoImage,
         category: item?.category || "N/A",
         description: item?.description || "N/A",
@@ -371,20 +438,20 @@ const Home = () => {
                         ]}
                       >
                         <div className="p-2">
-                          <div className="flex items-center gap-2 mb-2">
+                          {/* <div className="flex items-center gap-2 mb-2">
                             {getCategoryIcon(product.category)}
                             <Text type="secondary" className="text-sm">
-                              {product.category}
+                              {product?.category}
                             </Text>
-                          </div>
+                          </div> */}
                           <Title level={4} className="!mb-2 !text-gray-800">
-                            {product.name}
+                            {product?.name}
                           </Title>
                           <Text className="text-gray-600 text-sm mb-3 block">
-                            {product.description}
+                            {/* {product.description} */}
                           </Text>
                           <Title level={3} className="!mb-0 !text-[#2d1603]">
-                            ₹{product.price.toFixed(2)}
+                            ₹{product?.price?.toFixed(2)}
                           </Title>
                         </div>
                       </Card>
@@ -538,6 +605,31 @@ const Home = () => {
                     />
                   </Form.Item>
 
+                  {/* Email */}
+                  <Form.Item
+                    name="email"
+                    label={<Text className="text-lg font-semibold">Email</Text>}
+                    rules={[
+                      { required: true, message: "Please enter your email" },
+                      {
+                        type: "email",
+                        message: "Please enter a valid email address",
+                      },
+                    ]}
+                  >
+                    <Input
+                      placeholder="Enter your email"
+                      className="h-14 text-lg rounded-xl"
+                    />
+                  </Form.Item>
+
+                  {/* Newsletter Opt-in */}
+                  {/* <Form.Item name="subscribe" valuePropName="checked">
+    <Checkbox className="text-base">
+      I want to receive updates and offers by email
+    </Checkbox>
+  </Form.Item> */}
+
                   {/* Submit Button */}
                   <Form.Item className="!mb-0 !mt-8">
                     <Button
@@ -645,7 +737,7 @@ const Home = () => {
                     <Button
                       type="primary"
                       size="large"
-                      onClick={handlePaymentSubmit}
+                      onClick={sendPaymentLinkHandler}
                       className="bg-[#2d1603] border-[#2d1603] hover:bg-[#3d2613] hover:border-[#3d2613] h-16 px-12 text-xl font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
                     >
                       Send Payment Link
@@ -744,7 +836,7 @@ const Home = () => {
                           {item.name}
                         </Title>
                         <Text className="text-[#2d1603] font-bold text-lg">
-                          ${item.price.toFixed(2)}
+                          ₹{item.price.toFixed(2)}
                         </Text>
                       </div>
                       <div className="flex items-center gap-2">
@@ -804,7 +896,9 @@ const Home = () => {
         </div>
       </Drawer>
 
-      <FullScreenSpin isLoader={isPending} />
+      <FullScreenSpin
+        isLoader={isPending || paymentLinkSentLoader || paymentLoader}
+      />
     </div>
   );
 };
