@@ -14,6 +14,10 @@ export const useProductListData = () => {
 export const usePaymentLinkSend = (setPaymentLoader) => {
   return useMutation({
     mutationFn: (data) => paymentLinkSendApi(data),
+    onSuccess: (data) => {
+      setPaymentLoader(true);
+      message.success(data?.message);
+    },
     onError: (error) => {
       setPaymentLoader(false);
       message.error(error?.message || "Something went wrong");

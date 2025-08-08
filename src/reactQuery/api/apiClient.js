@@ -1,5 +1,5 @@
 import axios from "axios";
-export const serverURL = "https://fabelle-stage.pep1.in/fabelle-backend";
+export const serverURL = "https://fabelle-stage.pep1.in/fabelle_backend";
 const baseURL = `${serverURL}/api`;
 export const imgURL = `${serverURL}/`;
 

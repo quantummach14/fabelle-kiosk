@@ -182,7 +182,6 @@ const Home = () => {
   const { mutate: paymentLinkSentMutate, isPending: paymentLinkSentLoader } =
     usePaymentLinkSend(setPaymentLoader);
   const handlePaymentSubmit = () => {
-    setPaymentLoader(true);
     if (selectedPayment) {
       const values = form.getFieldsValue(true); // ✅ get all form data
       const payload = {
@@ -203,10 +202,9 @@ const Home = () => {
   const sendPaymentLinkHandler = () => {
     setCancelWaiting(true);
     cancelOrderSocket.current = io("https://fabelle-stage.pep1.in", {
-      path: "/fabelle-backend/api/socket.io",
+      path: "/fabelle_backend/api/socket.io",
     });
     cancelOrderSocket.current.on("connect", () => {
-      debugger;
       cancelOrderSocket.current.emit("register", {
         clientId: clientId,
       }); // Register client ID on connection
@@ -224,7 +222,7 @@ const Home = () => {
       cancelOrderSocket.current.emit("disconnectClient", clientId);
       cancelOrderSocket.current.disconnect();
       cancelOrderSocket.current = null;
-    }, 30500);
+    }, 900000);
     // on_update
     cancelOrderSocket.current.on("on_payment_response", (msg) => {
       setPaymentLoader(false);
@@ -654,89 +652,172 @@ const Home = () => {
                 <Title level={2} className="text-center !text-[#2d1603] !mb-8">
                   Select Payment Method
                 </Title>
-
-                <Row gutter={[32, 32]} className="mb-12">
-                  {[
-                    // {
-                    //   id: "card",
-                    //   label: "Card Payment",
-                    //   icon: CreditCard,
-                    //   description: "Pay with credit or debit card",
-                    //   color: "bg-blue-50 border-blue-200 hover:border-blue-400",
-                    // },
-                    {
-                      id: "online",
-                      label: "Online Payment",
-                      icon: Smartphone,
-                      description: "UPI, Net Banking, Wallets",
-                      color:
-                        "bg-green-50 border-green-200 hover:border-green-400",
-                    },
-                    // {
-                    //   id: "other",
-                    //   label: "Other Method",
-                    //   icon: Users,
-                    //   description: "Cash or alternative payment",
-                    //   color:
-                    //     "bg-purple-50 border-purple-200 hover:border-purple-400",
-                    // },
-                  ].map((method) => (
-                    <Col key={method.id} xs={24} md={8}>
-                      <div
-                        onClick={() =>
-                          setSelectedPayment(method.id as PaymentMethod)
-                        }
-                        className={`cursor-pointer transition-all duration-300 rounded-3xl border-3 p-8 text-center h-64 flex flex-col justify-center ${
-                          selectedPayment === method.id
-                            ? "border-[#2d1603] bg-[#2d1603] text-white shadow-2xl transform scale-105"
-                            : `${method.color} hover:shadow-xl hover:transform hover:scale-102`
-                        }`}
-                      >
-                        <method.icon
-                          size={64}
-                          className={`mx-auto mb-6 ${
-                            selectedPayment === method.id
-                              ? "text-white"
-                              : "text-gray-600"
-                          }`}
-                        />
-                        <Title
-                          level={3}
-                          className={`!mb-3 ${
-                            selectedPayment === method.id
-                              ? "!text-white"
-                              : "!text-gray-800"
-                          }`}
-                        >
-                          {method.label}
-                        </Title>
-                        <Text
-                          className={`text-lg ${
-                            selectedPayment === method.id
-                              ? "text-gray-200"
-                              : "text-gray-600"
-                          }`}
-                        >
-                          {method.description}
-                        </Text>
-                        {selectedPayment === method.id && (
-                          <div className="mt-4">
-                            <Check
-                              size={32}
-                              className="mx-auto text-white bg-white bg-opacity-20 rounded-full p-1"
+                <div className="flex justify-center items-center min-h-[400px]">
+                  <div className="max-w-screen-md w-full">
+                    <Row justify="center" gutter={[32, 32]} className="mb-12">
+                      {[
+                        // {
+                        //   id: "card",
+                        //   label: "Card Payment",
+                        //   icon: CreditCard,
+                        //   description: "Pay with credit or debit card",
+                        //   color: "bg-blue-50 border-blue-200 hover:border-blue-400",
+                        // },
+                        {
+                          id: "online",
+                          label: "Online Payment",
+                          icon: Smartphone,
+                          description: "UPI, Net Banking, Wallets",
+                          color:
+                            "bg-green-50 border-green-200 hover:border-green-400",
+                        },
+                        // {
+                        //   id: "other",
+                        //   label: "Other Method",
+                        //   icon: Users,
+                        //   description: "Cash or alternative payment",
+                        //   color:
+                        //     "bg-purple-50 border-purple-200 hover:border-purple-400",
+                        // },
+                      ].map((method) => (
+                        <Col key={method.id} xs={24} sm={16} md={12} lg={8}>
+                          <div
+                            onClick={() =>
+                              setSelectedPayment(method.id as PaymentMethod)
+                            }
+                            className={`cursor-pointer transition-all duration-300 rounded-3xl border-3 p-8 text-center h-64 flex flex-col justify-center ${
+                              selectedPayment === method.id
+                                ? "border-[#2d1603] bg-[#2d1603] text-white shadow-2xl transform scale-105"
+                                : `${method.color} hover:shadow-xl hover:transform hover:scale-102`
+                            }`}
+                          >
+                            <method.icon
+                              size={64}
+                              className={`mx-auto mb-6 ${
+                                selectedPayment === method.id
+                                  ? "text-white"
+                                  : "text-gray-600"
+                              }`}
                             />
+                            <Title
+                              level={3}
+                              className={`!mb-3 ${
+                                selectedPayment === method.id
+                                  ? "!text-white"
+                                  : "!text-gray-800"
+                              }`}
+                            >
+                              {method.label}
+                            </Title>
+                            <Text
+                              className={`text-lg ${
+                                selectedPayment === method.id
+                                  ? "text-gray-200"
+                                  : "text-gray-600"
+                              }`}
+                            >
+                              {method.description}
+                            </Text>
+                            {selectedPayment === method.id && (
+                              <div className="mt-4">
+                                <Check
+                                  size={32}
+                                  className="mx-auto text-white bg-white bg-opacity-20 rounded-full p-1"
+                                />
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </Col>
-                  ))}
-                </Row>
+                        </Col>
+                      ))}
+                    </Row>
+                  </div>
+                </div>
+
+                {/* <div className="flex justify-center items-center min-h-[400px]">
+                  <Row gutter={[32, 32]} className="mb-12">
+                    {[
+                      // {
+                      //   id: "card",
+                      //   label: "Card Payment",
+                      //   icon: CreditCard,
+                      //   description: "Pay with credit or debit card",
+                      //   color: "bg-blue-50 border-blue-200 hover:border-blue-400",
+                      // },
+                      {
+                        id: "online",
+                        label: "Online Payment",
+                        icon: Smartphone,
+                        description: "UPI, Net Banking, Wallets",
+                        color:
+                          "bg-green-50 border-green-200 hover:border-green-400",
+                      },
+                      // {
+                      //   id: "other",
+                      //   label: "Other Method",
+                      //   icon: Users,
+                      //   description: "Cash or alternative payment",
+                      //   color:
+                      //     "bg-purple-50 border-purple-200 hover:border-purple-400",
+                      // },
+                    ].map((method) => (
+                      <Col key={method.id} xs={24} md={8}>
+                        <div
+                          onClick={() =>
+                            setSelectedPayment(method.id as PaymentMethod)
+                          }
+                          className={`cursor-pointer transition-all duration-300 rounded-3xl border-3 p-8 text-center h-64 flex flex-col justify-center ${
+                            selectedPayment === method.id
+                              ? "border-[#2d1603] bg-[#2d1603] text-white shadow-2xl transform scale-105"
+                              : `${method.color} hover:shadow-xl hover:transform hover:scale-102`
+                          }`}
+                        >
+                          <method.icon
+                            size={64}
+                            className={`mx-auto mb-6 ${
+                              selectedPayment === method.id
+                                ? "text-white"
+                                : "text-gray-600"
+                            }`}
+                          />
+                          <Title
+                            level={3}
+                            className={`!mb-3 ${
+                              selectedPayment === method.id
+                                ? "!text-white"
+                                : "!text-gray-800"
+                            }`}
+                          >
+                            {method.label}
+                          </Title>
+                          <Text
+                            className={`text-lg ${
+                              selectedPayment === method.id
+                                ? "text-gray-200"
+                                : "text-gray-600"
+                            }`}
+                          >
+                            {method.description}
+                          </Text>
+                          {selectedPayment === method.id && (
+                            <div className="mt-4">
+                              <Check
+                                size={32}
+                                className="mx-auto text-white bg-white bg-opacity-20 rounded-full p-1"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </Col>
+                    ))}
+                  </Row>
+                </div> */}
 
                 {selectedPayment && (
                   <div className="text-center">
                     <Button
                       type="primary"
                       size="large"
+                      loading={paymentLinkSentLoader}
                       onClick={sendPaymentLinkHandler}
                       className="bg-[#2d1603] border-[#2d1603] hover:bg-[#3d2613] hover:border-[#3d2613] h-16 px-12 text-xl font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
                     >
@@ -897,7 +978,8 @@ const Home = () => {
       </Drawer>
 
       <FullScreenSpin
-        isLoader={isPending || paymentLinkSentLoader || paymentLoader}
+        tip={paymentLoader ? "Waiting for payment confirmation…" : ""}
+        isLoader={isPending || paymentLoader}
       />
     </div>
   );
