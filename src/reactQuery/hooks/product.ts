@@ -1,5 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
-import { paymentLinkSendApi, productsListDataApi } from "../api";
+import {
+  createOrderApi,
+  paymentLinkSendApi,
+  productsListDataApi,
+} from "../api";
 import { message } from "antd";
 
 export const useProductListData = () => {
@@ -20,6 +24,17 @@ export const usePaymentLinkSend = (setPaymentLoader) => {
     },
     onError: (error) => {
       setPaymentLoader(false);
+      message.error(error?.message || "Something went wrong");
+    },
+  });
+};
+
+export const useCreateOrder = (successHandler) => {
+  return useMutation({
+    mutationFn: (data) => createOrderApi(data),
+    onSuccess: (data) => successHandler(),
+    onError: (error) => {
+      successHandler();
       message.error(error?.message || "Something went wrong");
     },
   });

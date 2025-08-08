@@ -35,6 +35,7 @@ import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
+  useCreateOrder,
   usePaymentLinkSend,
   useProductListData,
 } from "../reactQuery/hooks/product";
@@ -48,6 +49,7 @@ const { Step } = Steps;
 
 interface Product {
   id: number;
+  skuCode: string;
   name: string;
   price: number;
   image: string;
@@ -181,6 +183,16 @@ const Home = () => {
   // PAYMENT LINK SENT
   const { mutate: paymentLinkSentMutate, isPending: paymentLinkSentLoader } =
     usePaymentLinkSend(setPaymentLoader);
+
+  // CREATED ORDER
+  const orderCreatedSuccessHandler = () => {
+    setPaymentLoader(false);
+    setCurrentStep("confirmation");
+  };
+  const { mutate: createdOrderMutate } = useCreateOrder(
+    orderCreatedSuccessHandler
+  );
+
   const handlePaymentSubmit = () => {
     if (selectedPayment) {
       const values = form.getFieldsValue(true); // ✅ get all form data
@@ -189,13 +201,34 @@ const Home = () => {
         cust_name: values.name,
         cust_phone: values.mobile,
         cust_email: values.email,
-        // amount: getTotalPrice(),
-        amount: 1,
+        amount: getTotalPrice(),
         clientId,
       };
       paymentLinkSentMutate(payload);
-      // setCurrentStep("confirmation");
     }
+  };
+  const orderCreatedHandler = () => {
+    const values = form.getFieldsValue(true);
+    const payload = {
+      orderId,
+      userId: loginUserInfo.id,
+      custName: values.name,
+      custPhone: values.mobile,
+      custEmail: values.email,
+      custAddress: values.address,
+      custCity: values.city,
+      custState: values.state,
+      custPincode: values.pincode,
+      amount: getTotalPrice(),
+      location: loginUserInfo.location,
+      items: cart.map((item) => ({
+        skuCode: item.skuCode,
+        skuName: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    };
+    createdOrderMutate(payload);
   };
 
   let cancelOrderSocket = useRef(null);
@@ -225,10 +258,8 @@ const Home = () => {
     }, 900000);
     // on_update
     cancelOrderSocket.current.on("on_payment_response", (msg) => {
-      setPaymentLoader(false);
+      orderCreatedHandler();
       clearTimeout(timeoutId2);
-      console.log(msg, "mssg");
-      // toast.success("Items Cancelled Successfully");
       cancelOrderSocket.current.emit("disconnectClient", clientId);
       cancelOrderSocket.current.disconnect();
       cancelOrderSocket.current = null;
@@ -278,6 +309,7 @@ const Home = () => {
     const updateProductList =
       data?.data?.map((item) => ({
         id: item?.id,
+        skuCode: item.sku_code,
         name: item?.sku_name || "N/A",
         price: Number(item?.mrp) || 0,
         image: item?.image || NoImage,
@@ -841,18 +873,13 @@ const Home = () => {
                 }
                 title={
                   <Title level={2} className="!text-[#2d1603] !mb-4">
-                    Payment Link Sent!
+                    Payment Successful!
                   </Title>
                 }
                 subTitle={
                   <div className="space-y-4">
-                    <Text className="text-xl text-gray-600 block">
-                      A payment link has been sent to{" "}
-                      <strong>{userInfo.mobile}</strong>
-                    </Text>
                     <Text className="text-lg text-gray-500 block">
-                      Please check your mobile device and complete the payment
-                      to confirm your order.
+                      Payment done and order has been created successfully.
                     </Text>
                   </div>
                 }

@@ -15,3 +15,6 @@ export const productsListDataApi = (data) =>
 
 export const paymentLinkSendApi = (data) =>
   apiMethods.POST(`kiosk/send/payment-link`, data, headers);
+
+export const createOrderApi = (data) =>
+  apiMethods.POST(`kiosk/create-order`, data, headers);
