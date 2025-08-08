@@ -24,7 +24,6 @@ export const connectSocket = ({ Run_Socket }: ConnectSocketProps): void => {
   });
 
   socket.on("connect", () => {
-    debugger
     console.log("Connected to WebSocket server");
   });
 
@@ -38,7 +37,6 @@ export const connectSocket = ({ Run_Socket }: ConnectSocketProps): void => {
   });
 
   socket.on("on_payment_response", (data: unknown) => {
-    debugger;
     console.log("Payment response:", data);
   });
 };
