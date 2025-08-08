@@ -195,7 +195,7 @@ const Home = () => {
 
   const handlePaymentSubmit = () => {
     if (selectedPayment) {
-      const values = form.getFieldsValue(true); // ✅ get all form data
+      const values = form.getFieldsValue(true); 
       const payload = {
         orderId,
         cust_name: values.name,
