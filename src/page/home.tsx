@@ -66,7 +66,7 @@ interface UserInfo {
   mobile: string;
 }
 
-type PaymentMethod = "card" | "online" | "other" | null;
+type PaymentMethod = "card" | "upi" | "cash" | null;
 type AppStep = "products" | "userInfo" | "payment" | "confirmation";
 
 const getCategoryIcon = (category: string) => {
@@ -189,13 +189,12 @@ const Home = () => {
     setPaymentLoader(false);
     setCurrentStep("confirmation");
   };
-  const { mutate: createdOrderMutate } = useCreateOrder(
-    orderCreatedSuccessHandler
-  );
+  const { mutate: createdOrderMutate, isPending: createdOrderIsPending } =
+    useCreateOrder(orderCreatedSuccessHandler);
 
   const handlePaymentSubmit = () => {
     if (selectedPayment) {
-      const values = form.getFieldsValue(true); 
+      const values = form.getFieldsValue(true);
       const payload = {
         orderId,
         cust_name: values.name,
@@ -218,6 +217,7 @@ const Home = () => {
       custAddress: values.address,
       custCity: values.city,
       custState: values.state,
+      paymentMode: selectedPayment,
       custPincode: values.pincode,
       amount: getTotalPrice(),
       location: loginUserInfo.location,
@@ -233,37 +233,41 @@ const Home = () => {
 
   let cancelOrderSocket = useRef(null);
   const sendPaymentLinkHandler = () => {
-    setCancelWaiting(true);
-    cancelOrderSocket.current = io("https://fabelle-stage.pep1.in", {
-      path: "/fabelle_backend/api/socket.io",
-    });
-    cancelOrderSocket.current.on("connect", () => {
-      cancelOrderSocket.current.emit("register", {
-        clientId: clientId,
-      }); // Register client ID on connection
-    });
-    cancelOrderSocket.current.on("on_register", (msg) => {
-      if (msg === "success") {
-        (async () => {
-          handlePaymentSubmit();
-        })();
-      }
-    });
-    let timeoutId2 = setTimeout(() => {
-      setCancelWaiting(false);
-      // toast.error("Cannot cancel at the moment, try again later");
-      cancelOrderSocket.current.emit("disconnectClient", clientId);
-      cancelOrderSocket.current.disconnect();
-      cancelOrderSocket.current = null;
-    }, 900000);
-    // on_update
-    cancelOrderSocket.current.on("on_payment_response", (msg) => {
+    if (selectedPayment === "upi") {
+      setCancelWaiting(true);
+      cancelOrderSocket.current = io("https://fabelle-stage.pep1.in", {
+        path: "/fabelle_backend/api/socket.io",
+      });
+      cancelOrderSocket.current.on("connect", () => {
+        cancelOrderSocket.current.emit("register", {
+          clientId: clientId,
+        }); // Register client ID on connection
+      });
+      cancelOrderSocket.current.on("on_register", (msg) => {
+        if (msg === "success") {
+          (async () => {
+            handlePaymentSubmit();
+          })();
+        }
+      });
+      let timeoutId2 = setTimeout(() => {
+        setCancelWaiting(false);
+        // toast.error("Cannot cancel at the moment, try again later");
+        cancelOrderSocket.current.emit("disconnectClient", clientId);
+        cancelOrderSocket.current.disconnect();
+        cancelOrderSocket.current = null;
+      }, 900000);
+      // on_update
+      cancelOrderSocket.current.on("on_payment_response", () => {
+        orderCreatedHandler();
+        clearTimeout(timeoutId2);
+        cancelOrderSocket.current.emit("disconnectClient", clientId);
+        cancelOrderSocket.current.disconnect();
+        cancelOrderSocket.current = null;
+      });
+    } else {
       orderCreatedHandler();
-      clearTimeout(timeoutId2);
-      cancelOrderSocket.current.emit("disconnectClient", clientId);
-      cancelOrderSocket.current.disconnect();
-      cancelOrderSocket.current = null;
-    });
+    }
   };
 
   const resetApp = () => {
@@ -455,31 +459,27 @@ const Home = () => {
                           </div>
                         }
                         actions={[
-                          <Button
+                          <div
+                            className="flex justify-end w-full pr-4"
                             key="add"
-                            type="primary"
-                            size="large"
-                            icon={<Plus size={20} />}
-                            onClick={() => addToCart(product)}
-                            className="bg-[#2d1603] border-[#2d1603] hover:bg-[#3d2613] hover:border-[#3d2613] w-full mx-4 h-12 text-lg font-semibold rounded-xl"
                           >
-                            Add to Cart
-                          </Button>,
+                            <Button
+                              type="primary"
+                              size="middle"
+                              icon={<Plus size={18} />}
+                              onClick={() => addToCart(product)}
+                              className="bg-[#2d1603] border-[#2d1603] hover:bg-[#3d2613] hover:border-[#3d2613] px-4 !py-5 text-lg font-medium rounded-lg"
+                            >
+                              Add to Cart
+                            </Button>
+                          </div>,
                         ]}
                       >
-                        <div className="p-2">
-                          {/* <div className="flex items-center gap-2 mb-2">
-                            {getCategoryIcon(product.category)}
-                            <Text type="secondary" className="text-sm">
-                              {product?.category}
-                            </Text>
-                          </div> */}
+                        <div className="">
                           <Title level={4} className="!mb-2 !text-gray-800">
                             {product?.name}
                           </Title>
-                          <Text className="text-gray-600 text-sm mb-3 block">
-                            {/* {product.description} */}
-                          </Text>
+                          <Text className="text-gray-600 text-sm mb-3 block" />
                           <Title level={3} className="!mb-0 !text-[#2d1603]">
                             ₹{product?.price?.toFixed(2)}
                           </Title>
@@ -688,29 +688,31 @@ const Home = () => {
                   <div className="max-w-screen-md w-full">
                     <Row justify="center" gutter={[32, 32]} className="mb-12">
                       {[
-                        // {
-                        //   id: "card",
-                        //   label: "Card Payment",
-                        //   icon: CreditCard,
-                        //   description: "Pay with credit or debit card",
-                        //   color: "bg-blue-50 border-blue-200 hover:border-blue-400",
-                        // },
                         {
-                          id: "online",
+                          id: "card",
+                          label: "Card Payment",
+                          icon: CreditCard,
+                          description: "Pay with credit or debit card",
+                          color:
+                            "bg-blue-50 border-blue-200 hover:border-blue-400",
+                        },
+                        {
+                          id: "upi",
                           label: "Online Payment",
+                          buttonText: "Send Payment Link",
                           icon: Smartphone,
                           description: "UPI, Net Banking, Wallets",
                           color:
                             "bg-green-50 border-green-200 hover:border-green-400",
                         },
-                        // {
-                        //   id: "other",
-                        //   label: "Other Method",
-                        //   icon: Users,
-                        //   description: "Cash or alternative payment",
-                        //   color:
-                        //     "bg-purple-50 border-purple-200 hover:border-purple-400",
-                        // },
+                        {
+                          id: "cash",
+                          label: "Other Method",
+                          icon: Users,
+                          description: "Cash or alternative payment",
+                          color:
+                            "bg-purple-50 border-purple-200 hover:border-purple-400",
+                        },
                       ].map((method) => (
                         <Col key={method.id} xs={24} sm={16} md={12} lg={8}>
                           <div
@@ -765,85 +767,6 @@ const Home = () => {
                   </div>
                 </div>
 
-                {/* <div className="flex justify-center items-center min-h-[400px]">
-                  <Row gutter={[32, 32]} className="mb-12">
-                    {[
-                      // {
-                      //   id: "card",
-                      //   label: "Card Payment",
-                      //   icon: CreditCard,
-                      //   description: "Pay with credit or debit card",
-                      //   color: "bg-blue-50 border-blue-200 hover:border-blue-400",
-                      // },
-                      {
-                        id: "online",
-                        label: "Online Payment",
-                        icon: Smartphone,
-                        description: "UPI, Net Banking, Wallets",
-                        color:
-                          "bg-green-50 border-green-200 hover:border-green-400",
-                      },
-                      // {
-                      //   id: "other",
-                      //   label: "Other Method",
-                      //   icon: Users,
-                      //   description: "Cash or alternative payment",
-                      //   color:
-                      //     "bg-purple-50 border-purple-200 hover:border-purple-400",
-                      // },
-                    ].map((method) => (
-                      <Col key={method.id} xs={24} md={8}>
-                        <div
-                          onClick={() =>
-                            setSelectedPayment(method.id as PaymentMethod)
-                          }
-                          className={`cursor-pointer transition-all duration-300 rounded-3xl border-3 p-8 text-center h-64 flex flex-col justify-center ${
-                            selectedPayment === method.id
-                              ? "border-[#2d1603] bg-[#2d1603] text-white shadow-2xl transform scale-105"
-                              : `${method.color} hover:shadow-xl hover:transform hover:scale-102`
-                          }`}
-                        >
-                          <method.icon
-                            size={64}
-                            className={`mx-auto mb-6 ${
-                              selectedPayment === method.id
-                                ? "text-white"
-                                : "text-gray-600"
-                            }`}
-                          />
-                          <Title
-                            level={3}
-                            className={`!mb-3 ${
-                              selectedPayment === method.id
-                                ? "!text-white"
-                                : "!text-gray-800"
-                            }`}
-                          >
-                            {method.label}
-                          </Title>
-                          <Text
-                            className={`text-lg ${
-                              selectedPayment === method.id
-                                ? "text-gray-200"
-                                : "text-gray-600"
-                            }`}
-                          >
-                            {method.description}
-                          </Text>
-                          {selectedPayment === method.id && (
-                            <div className="mt-4">
-                              <Check
-                                size={32}
-                                className="mx-auto text-white bg-white bg-opacity-20 rounded-full p-1"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </Col>
-                    ))}
-                  </Row>
-                </div> */}
-
                 {selectedPayment && (
                   <div className="text-center">
                     <Button
@@ -853,7 +776,9 @@ const Home = () => {
                       onClick={sendPaymentLinkHandler}
                       className="bg-[#2d1603] border-[#2d1603] hover:bg-[#3d2613] hover:border-[#3d2613] h-16 px-12 text-xl font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
                     >
-                      Send Payment Link
+                      {selectedPayment === "upi"
+                        ? "Send Payment Link"
+                        : "Create Order"}
                     </Button>
                   </div>
                 )}
@@ -873,13 +798,17 @@ const Home = () => {
                 }
                 title={
                   <Title level={2} className="!text-[#2d1603] !mb-4">
-                    Payment Successful!
+                    {selectedPayment === "upi"
+                      ? "Payment Successful!"
+                      : "Order Created Successfully"}
                   </Title>
                 }
                 subTitle={
                   <div className="space-y-4">
                     <Text className="text-lg text-gray-500 block">
-                      Payment done and order has been created successfully.
+                      {selectedPayment === "upi"
+                        ? "Payment done and order has been created successfully."
+                        : null}
                     </Text>
                   </div>
                 }
@@ -1006,7 +935,11 @@ const Home = () => {
 
       <FullScreenSpin
         tip={paymentLoader ? "Waiting for payment confirmation…" : ""}
-        isLoader={isPending || paymentLoader}
+        isLoader={
+          isPending || paymentLoader || selectedPayment !== "upi"
+            ? createdOrderIsPending
+            : false
+        }
       />
     </div>
   );
