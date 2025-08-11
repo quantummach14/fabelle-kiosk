@@ -470,9 +470,9 @@ const Home = () => {
                         ]}
                       >
                         <div className="">
-                          <Title level={4} className="!mb-2 !text-gray-800">
+                          <div className="!mb-2 text-lg font-semibold !text-gray-800">
                             {product?.name}
-                          </Title>
+                          </div>
                           <Text className="text-gray-600 text-sm mb-3 block" />
                           <Title level={3} className="!mb-0 !text-[#2d1603]">
                             ₹{product?.price?.toFixed(2)}
