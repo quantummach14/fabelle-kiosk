@@ -12,7 +12,6 @@ import {
   Col,
   Space,
   message,
-  Checkbox,
 } from "antd";
 import {
   ShoppingCart,
@@ -25,8 +24,6 @@ import {
   Check,
   Coffee,
   ArrowLeft,
-  Cake,
-  Leaf,
   ChevronDown,
 } from "lucide-react";
 
@@ -43,6 +40,7 @@ import NoImage from "../assets/noProductImage.png";
 import { FullScreenSpin } from "../components/full-spin";
 import { v4 as uuidv4 } from "uuid";
 import { io } from "socket.io-client";
+import { debounce } from "../utils/global-func";
 
 const { Title, Text } = Typography;
 const { Step } = Steps;
@@ -69,20 +67,8 @@ interface UserInfo {
 type PaymentMethod = "card" | "upi" | "cash" | null;
 type AppStep = "products" | "userInfo" | "payment" | "confirmation";
 
-const getCategoryIcon = (category: string) => {
-  switch (category) {
-    case "Coffee":
-      return <Coffee className="w-5 h-5" />;
-    case "Pastries":
-      return <Cake className="w-5 h-5" />;
-    case "Tea":
-      return <Leaf className="w-5 h-5" />;
-    default:
-      return <Coffee className="w-5 h-5" />;
-  }
-};
 const loginUserInfo = JSON.parse(localStorage.getItem("userInfo"));
-
+let searchHit = false;
 const Home = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -96,10 +82,9 @@ const Home = () => {
   const [apiPayload, setApiPayload] = useState({
     limit: 10,
     offset: 0,
+    search: "",
   });
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState<AppStep>("products");
@@ -116,17 +101,8 @@ const Home = () => {
 
   const getFilteredProducts = () => {
     return productsList.filter((product) => {
-      const matchesSearch =
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory =
-        selectedCategory === "" || product.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+      return product;
     });
-  };
-
-  const getCategories = () => {
-    return [...new Set(productsList.map((product) => product.category))];
   };
 
   const addToCart = (product: Product) => {
@@ -206,6 +182,7 @@ const Home = () => {
       paymentLinkSentMutate(payload);
     }
   };
+
   const orderCreatedHandler = () => {
     const values = form.getFieldsValue(true);
     const payload = {
@@ -294,6 +271,15 @@ const Home = () => {
     }
   };
 
+  const searchHandler = (e) => {
+    searchHit = true;
+    setApiPayload(() => ({
+      limit: 10,
+      offset: 0,
+      search: e,
+    }));
+  };
+
   const loadMoreHandler = () => {
     setApiPayload((prev) => ({
       ...prev,
@@ -302,10 +288,17 @@ const Home = () => {
   };
 
   useEffect(() => {
-    mutate({
-      location: selectedLocation || loginUserInfo.location,
-      limit: apiPayload.limit,
-      offset: apiPayload.offset,
+    debounce(() => {
+      if (searchHit) {
+        setProductList([]);
+      }
+      searchHit = false;
+      mutate({
+        location: selectedLocation || loginUserInfo.location,
+        limit: apiPayload.limit,
+        offset: apiPayload.offset,
+        search: apiPayload.search,
+      });
     });
   }, [apiPayload]);
 
@@ -320,7 +313,11 @@ const Home = () => {
         category: item?.category || "N/A",
         description: item?.description || "N/A",
       })) || [];
-    setProductList((pre) => [...pre, ...updateProductList]);
+    setProductList((pre) =>
+      apiPayload?.search?.length > 0
+        ? updateProductList
+        : [...pre, ...updateProductList]
+    );
   }, [data]);
 
   return (
@@ -422,11 +419,8 @@ const Home = () => {
         {currentStep === "products" && (
           <div className="max-w-7xl mx-auto">
             <SearchBar
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              categories={getCategories()}
+              searchTerm={apiPayload.search}
+              onSearchChange={searchHandler}
             />
 
             <Row gutter={[24, 24]}>
@@ -506,6 +500,8 @@ const Home = () => {
             </Row>
           </div>
         )}
+
+        {/* F O R M */}
 
         {currentStep === "userInfo" && (
           <div className="max-w-2xl mx-auto">
@@ -652,13 +648,6 @@ const Home = () => {
                       className="h-14 text-lg rounded-xl"
                     />
                   </Form.Item>
-
-                  {/* Newsletter Opt-in */}
-                  {/* <Form.Item name="subscribe" valuePropName="checked">
-    <Checkbox className="text-base">
-      I want to receive updates and offers by email
-    </Checkbox>
-  </Form.Item> */}
 
                   {/* Submit Button */}
                   <Form.Item className="!mb-0 !mt-8">
@@ -936,9 +925,9 @@ const Home = () => {
       <FullScreenSpin
         tip={paymentLoader ? "Waiting for payment confirmation…" : ""}
         isLoader={
-          isPending || paymentLoader || selectedPayment !== "upi"
-            ? createdOrderIsPending
-            : false
+          isPending ||
+          paymentLoader ||
+          (selectedPayment !== "upi" && createdOrderIsPending)
         }
       />
     </div>
