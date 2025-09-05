@@ -87,7 +87,6 @@ const Home = () => {
   // - - - - - - - - - - F U N C T I O N S - - - - - - - - - -
 
   // - - - - - H E A D E R - - - - -
-
   const getTotalItems = () =>
     cart.reduce((total, item) => total + item.quantity, 0);
   const handleLogout = () => {
@@ -123,7 +122,6 @@ const Home = () => {
   };
 
   // - - - - - M A I N  C O N T E N T - - - - -
-
   const searchHandler = (e) => {
     searchHit = true;
     setApiPayload(() => ({
