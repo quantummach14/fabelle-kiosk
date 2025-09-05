@@ -6,7 +6,6 @@ import {
   Form,
   Input,
   Result,
-  Steps,
   Typography,
   Row,
   Col,
@@ -18,9 +17,6 @@ import {
   Plus,
   Minus,
   X,
-  CreditCard,
-  Smartphone,
-  Users,
   Check,
   Coffee,
   ArrowLeft,
@@ -32,6 +28,7 @@ import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
+  useCartPaymentOrder,
   useCreateOrder,
   usePaymentLinkSend,
   useProductListData,
@@ -41,42 +38,34 @@ import { FullScreenSpin } from "../components/full-spin";
 import { v4 as uuidv4 } from "uuid";
 import { io } from "socket.io-client";
 import { debounce } from "../utils/global-func";
+import { AppStep, CartItem, PaymentMethod, Product } from "../constant/types";
+import { cardOptions, stepsArray } from "../constant/app-constant";
 
 const { Title, Text } = Typography;
-const { Step } = Steps;
 
-interface Product {
-  id: number;
-  skuCode: string;
-  name: string;
-  price: number;
-  image: string;
-  category: string;
-  description: string;
-}
-
-interface CartItem extends Product {
-  quantity: number;
-}
-
-interface UserInfo {
-  name: string;
-  mobile: string;
-}
-
-type PaymentMethod = "card" | "upi" | "cash" | null;
-type AppStep = "products" | "userInfo" | "payment" | "confirmation";
-
-const loginUserInfo = JSON.parse(localStorage.getItem("userInfo"));
 let searchHit = false;
+
 const Home = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+
   const queryParams = new URLSearchParams(location.search);
   const selectedLocation = queryParams.get("location");
 
-  const navigate = useNavigate();
-  const { mutate, data, isPending } = useProductListData();
-  const totalItems = data?.total || 0;
+  const loginUserInfo = JSON.parse(localStorage.getItem("userInfo"));
+
+  const orderId = "ORD" + uuidv4();
+  const clientId = "CLIENT" + uuidv4();
+
+  // - - - - - - - - - - S T A T E - - - - - - - - - -
+
+  // - - - - - H E A D E R - - - - -
+
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [currentStep, setCurrentStep] = useState<AppStep>("products");
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // - - - - - M A I N  C O N T E N T - - - - -
 
   const [productsList, setProductList] = useState([]);
   const [apiPayload, setApiPayload] = useState({
@@ -85,13 +74,22 @@ const Home = () => {
     search: "",
   });
 
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [currentStep, setCurrentStep] = useState<AppStep>("products");
-  const [userInfo, setUserInfo] = useState<UserInfo>({ name: "", mobile: "" });
-  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>(null);
+  // - - - - - F O R M - - - - -
+
   const [form] = Form.useForm();
 
+  // P A Y M E N T  M E T H O D  C H O S E
+
+  let cancelOrderSocket = useRef(null);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>(null);
+  const [paymentLoader, setPaymentLoader] = useState(false);
+
+  // - - - - - - - - - - F U N C T I O N S - - - - - - - - - -
+
+  // - - - - - H E A D E R - - - - -
+
+  const getTotalItems = () =>
+    cart.reduce((total, item) => total + item.quantity, 0);
   const handleLogout = () => {
     localStorage.clear();
     resetApp();
@@ -99,11 +97,61 @@ const Home = () => {
     message.info("Logged out successfully");
   };
 
-  const getFilteredProducts = () => {
-    return productsList.filter((product) => {
+  const resetApp = () => {
+    setCart([]);
+    setCurrentStep("products");
+    setSelectedPayment(null);
+    setIsCartOpen(false);
+    form.resetFields();
+  };
+
+  // - - - - - P R O G R E S S  S T E P S - - - - -
+
+  const getStepNumber = () => {
+    switch (currentStep) {
+      case "products":
+        return 0;
+      case "userInfo":
+        return 1;
+      case "payment":
+        return 2;
+      case "confirmation":
+        return 3;
+      default:
+        return 0;
+    }
+  };
+
+  // - - - - - M A I N  C O N T E N T - - - - -
+
+  const searchHandler = (e) => {
+    searchHit = true;
+    setApiPayload(() => ({
+      limit: 10,
+      offset: 0,
+      search: e,
+    }));
+  };
+
+  const getFilteredProducts = () =>
+    productsList.filter((product) => {
       return product;
     });
+
+  const loadMoreHandler = () => {
+    setApiPayload((prev) => ({
+      ...prev,
+      offset: prev.offset + prev.limit, // 👈 increment by limit
+    }));
   };
+
+  // - - - - - - - - - - F O R M - - - - - - - - - -
+
+  const handleUserInfoSubmit = () => {
+    setCurrentStep("payment");
+  };
+
+  // P A Y M E N T  M E T H O D  C H O S E
 
   const addToCart = (product: Product) => {
     setCart((prevCart) => {
@@ -123,50 +171,10 @@ const Home = () => {
     });
   };
 
-  const updateQuantity = (id: number, quantity: number) => {
-    if (quantity === 0) {
-      setCart((prevCart) => prevCart.filter((item) => item.id !== id));
-    } else {
-      setCart((prevCart) =>
-        prevCart.map((item) => (item.id === id ? { ...item, quantity } : item))
-      );
-    }
-  };
-
-  const getTotalPrice = () => {
-    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
-  };
-
-  const getTotalItems = () => {
-    return cart.reduce((total, item) => total + item.quantity, 0);
-  };
-
-  const handleCheckout = () => {
-    if (cart.length > 0) {
-      setIsCartOpen(false);
-      setCurrentStep("userInfo");
-    }
-  };
-
-  const handleUserInfoSubmit = (values: UserInfo) => {
-    setUserInfo(values);
-    setCurrentStep("payment");
-  };
-  const [cancelWaiting, setCancelWaiting] = useState(false);
-  const [paymentLoader, setPaymentLoader] = useState(false);
-  const orderId = "ORD" + uuidv4();
-  const clientId = "CLIENT" + uuidv4();
-  // PAYMENT LINK SENT
-  const { mutate: paymentLinkSentMutate, isPending: paymentLinkSentLoader } =
-    usePaymentLinkSend(setPaymentLoader);
-
-  // CREATED ORDER
   const orderCreatedSuccessHandler = () => {
     setPaymentLoader(false);
     setCurrentStep("confirmation");
   };
-  const { mutate: createdOrderMutate, isPending: createdOrderIsPending } =
-    useCreateOrder(orderCreatedSuccessHandler);
 
   const handlePaymentSubmit = () => {
     if (selectedPayment) {
@@ -208,10 +216,8 @@ const Home = () => {
     createdOrderMutate(payload);
   };
 
-  let cancelOrderSocket = useRef(null);
   const sendPaymentLinkHandler = () => {
     if (selectedPayment === "upi") {
-      setCancelWaiting(true);
       cancelOrderSocket.current = io("https://fabelle-stage.pep1.in", {
         path: "/fabelle_backend/api/socket.io",
       });
@@ -228,7 +234,6 @@ const Home = () => {
         }
       });
       let timeoutId2 = setTimeout(() => {
-        setCancelWaiting(false);
         // toast.error("Cannot cancel at the moment, try again later");
         cancelOrderSocket.current.emit("disconnectClient", clientId);
         cancelOrderSocket.current.disconnect();
@@ -242,49 +247,59 @@ const Home = () => {
         cancelOrderSocket.current.disconnect();
         cancelOrderSocket.current = null;
       });
+    } else if (selectedPayment === "card") {
+      const values = form.getFieldsValue(true);
+      const payload = {
+        orderId,
+        amount: getTotalPrice(),
+        custPhone: values.mobile,
+      };
+      cartPaymentOrderMutate(payload);
     } else {
       orderCreatedHandler();
     }
   };
 
-  const resetApp = () => {
-    setCart([]);
-    setCurrentStep("products");
-    setUserInfo({ name: "", mobile: "" });
-    setSelectedPayment(null);
-    setIsCartOpen(false);
-    form.resetFields();
-  };
-
-  const getStepNumber = () => {
-    switch (currentStep) {
-      case "products":
-        return 0;
-      case "userInfo":
-        return 1;
-      case "payment":
-        return 2;
-      case "confirmation":
-        return 3;
-      default:
-        return 0;
+  const updateQuantity = (id: number, quantity: number) => {
+    if (quantity === 0) {
+      setCart((prevCart) => prevCart.filter((item) => item.id !== id));
+    } else {
+      setCart((prevCart) =>
+        prevCart.map((item) => (item.id === id ? { ...item, quantity } : item))
+      );
     }
   };
 
-  const searchHandler = (e) => {
-    searchHit = true;
-    setApiPayload(() => ({
-      limit: 10,
-      offset: 0,
-      search: e,
-    }));
-  };
+  // - - - - - - - - - - - - API CALL - - - - - - - - - - - -
 
-  const loadMoreHandler = () => {
-    setApiPayload((prev) => ({
-      ...prev,
-      offset: prev.offset + prev.limit, // 👈 increment by limit
-    }));
+  // - - - - - M A I N  C O N T E N T - - - - -
+
+  const { mutate, data, isPending } = useProductListData();
+  const totalItems = data?.total || 0;
+
+  // P A Y M E N T  M E T H O D  C H O S E
+
+  const { mutate: paymentLinkSentMutate, isPending: paymentLinkSentLoader } =
+    usePaymentLinkSend(setPaymentLoader);
+
+  const { mutate: createdOrderMutate, isPending: createdOrderIsPending } =
+    useCreateOrder(orderCreatedSuccessHandler);
+
+  const {
+    mutate: cartPaymentOrderMutate,
+    isPending: cartPaymentOrderIsPending,
+  } = useCartPaymentOrder(orderCreatedHandler);
+
+  //  - - - - - - - - - - - - O T H E R - - - - - - - - - - - -
+
+  const getTotalPrice = () =>
+    cart.reduce((total, item) => total + item.price * item.quantity, 0);
+
+  const handleCheckout = () => {
+    if (cart.length > 0) {
+      setIsCartOpen(false);
+      setCurrentStep("userInfo");
+    }
   };
 
   useEffect(() => {
@@ -337,12 +352,7 @@ const Home = () => {
         <div className="bg-gradient-to-r from-[#2d1603] to-[#3d2613] py-12 px-8 shadow-2xl">
           <div className="max-w-5xl mx-auto">
             <div className="flex items-center justify-center">
-              {[
-                { step: 0, title: "Products", icon: Coffee },
-                { step: 1, title: "Information", icon: Users },
-                { step: 2, title: "Payment", icon: CreditCard },
-                { step: 3, title: "Confirmation", icon: Check },
-              ].map((item, index) => (
+              {stepsArray.map((item, index) => (
                 <div key={item.step} className="flex items-center relative">
                   <div className="flex flex-col items-center">
                     <div
@@ -676,33 +686,7 @@ const Home = () => {
                 <div className="flex justify-center items-center min-h-[400px]">
                   <div className="max-w-screen-md w-full">
                     <Row justify="center" gutter={[32, 32]} className="mb-12">
-                      {[
-                        {
-                          id: "card",
-                          label: "Card Payment",
-                          icon: CreditCard,
-                          description: "Pay with credit or debit card",
-                          color:
-                            "bg-blue-50 border-blue-200 hover:border-blue-400",
-                        },
-                        {
-                          id: "upi",
-                          label: "Online Payment",
-                          buttonText: "Send Payment Link",
-                          icon: Smartphone,
-                          description: "UPI, Net Banking, Wallets",
-                          color:
-                            "bg-green-50 border-green-200 hover:border-green-400",
-                        },
-                        {
-                          id: "cash",
-                          label: "Other Method",
-                          icon: Users,
-                          description: "Cash or alternative payment",
-                          color:
-                            "bg-purple-50 border-purple-200 hover:border-purple-400",
-                        },
-                      ].map((method) => (
+                      {cardOptions.map((method) => (
                         <Col key={method.id} xs={24} sm={16} md={12} lg={8}>
                           <div
                             onClick={() =>
@@ -927,6 +911,7 @@ const Home = () => {
         isLoader={
           isPending ||
           paymentLoader ||
+          cartPaymentOrderIsPending ||
           (selectedPayment !== "upi" && createdOrderIsPending)
         }
       />

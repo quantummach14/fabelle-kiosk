@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import {
+  cartPaymentOrderApi,
   createOrderApi,
   paymentLinkSendApi,
   productsListDataApi,
@@ -32,6 +33,17 @@ export const usePaymentLinkSend = (setPaymentLoader) => {
 export const useCreateOrder = (successHandler) => {
   return useMutation({
     mutationFn: (data) => createOrderApi(data),
+    onSuccess: (data) => successHandler(),
+    onError: (error) => {
+      successHandler();
+      message.error(error?.message || "Something went wrong");
+    },
+  });
+};
+
+export const useCartPaymentOrder = (successHandler) => {
+  return useMutation({
+    mutationFn: (data) => cartPaymentOrderApi(data),
     onSuccess: (data) => successHandler(),
     onError: (error) => {
       successHandler();
