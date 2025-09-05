@@ -191,10 +191,10 @@ const Home = () => {
     }
   };
 
-  const orderCreatedHandler = () => {
+  const orderCreatedHandler = (lastOrderId = null) => {
     const values = form.getFieldsValue(true);
     const payload = {
-      orderId,
+      orderId: lastOrderId || orderId,
       userId: loginUserInfo.id,
       custName: values.name,
       custPhone: values.mobile,

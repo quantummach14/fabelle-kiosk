@@ -44,9 +44,10 @@ export const useCreateOrder = (successHandler) => {
 export const useCartPaymentOrder = (successHandler) => {
   return useMutation({
     mutationFn: (data) => cartPaymentOrderApi(data),
-    onSuccess: (data) => successHandler(),
+    onSuccess: (data, record) => {
+      successHandler(record.orderId);
+    },
     onError: (error) => {
-      successHandler();
       message.error(error?.message || "Something went wrong");
     },
   });
