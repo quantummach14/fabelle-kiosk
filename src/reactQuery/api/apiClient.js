@@ -1,11 +1,6 @@
 import axios from "axios";
 
-// S T A G E
-const stage = "https://fabelle-stage.pep1.in/fabelle_backend";
-// P R O D U C T I O N
-const production = "fabelle.retailconnect.co.in/fabelle_backend";
-
-export const serverURL = production;
+export const serverURL = import.meta.env.VITE_API_SERVER_LINK;
 const baseURL = `${serverURL}/api`;
 export const imgURL = `${serverURL}/`;
 

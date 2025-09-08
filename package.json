@@ -8,6 +8,8 @@
     "dev": "vite --port 3010 --host",
     "start": "vite --port 3010 --host",
     "build": "vite build",
+    "build-prod": "vite build --mode production",
+    "build-stage": "vite build --mode stage",
     "lint": "eslint .",
     "preview": "vite --port 3010 preview"
   },
