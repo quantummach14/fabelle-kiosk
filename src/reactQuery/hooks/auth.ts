@@ -18,7 +18,7 @@ export const useSignIn = () => {
       navigate(`/home?location=${data?.user?.location}`);
     },
     onError: (error) => {
-      message.error(error.message);
+      message.error(error.message || "Something went wrong.");
     },
   });
 };

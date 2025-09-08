@@ -1,5 +1,11 @@
 import axios from "axios";
-export const serverURL = "https://fabelle-stage.pep1.in/fabelle_backend";
+
+// S T A G E
+const stage = "https://fabelle-stage.pep1.in/fabelle_backend";
+// P R O D U C T I O N
+const production = "fabelle.retailconnect.co.in/fabelle_backend";
+
+export const serverURL = production;
 const baseURL = `${serverURL}/api`;
 export const imgURL = `${serverURL}/`;
 
