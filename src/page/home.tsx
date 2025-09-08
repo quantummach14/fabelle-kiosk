@@ -216,9 +216,12 @@ const Home = () => {
 
   const sendPaymentLinkHandler = () => {
     if (selectedPayment === "upi") {
-      cancelOrderSocket.current = io("https://fabelle-stage.pep1.in", {
-        path: "/fabelle_backend/api/socket.io",
-      });
+      cancelOrderSocket.current = io(
+        import.meta.env.VITE_API_SERVER_LINK_SOCKET,
+        {
+          path: "/fabelle_backend/api/socket.io",
+        }
+      );
       cancelOrderSocket.current.on("connect", () => {
         cancelOrderSocket.current.emit("register", {
           clientId: clientId,
