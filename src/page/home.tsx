@@ -11,6 +11,7 @@ import {
   Col,
   Space,
   message,
+  Select,
 } from "antd";
 import {
   ShoppingCart,
@@ -40,7 +41,7 @@ import { io } from "socket.io-client";
 import { debounce } from "../utils/global-func";
 import { AppStep, CartItem, PaymentMethod, Product } from "../constant/types";
 import { cardOptions, stepsArray } from "../constant/app-constant";
-
+const { Option } = Select;
 const { Title, Text } = Typography;
 
 let searchHit = false;
@@ -202,6 +203,7 @@ const Home = () => {
       custState: values.state,
       paymentMode: selectedPayment,
       custPincode: values.pincode,
+      channelName: values.channel,
       amount: getTotalPrice(),
       location: loginUserInfo.location,
       items: cart.map((item) => ({
@@ -660,6 +662,38 @@ const Home = () => {
                     />
                   </Form.Item>
 
+                  {/* Channel Name */}
+                  <Form.Item
+                    name="channel"
+                    label={
+                      <Text className="text-lg font-semibold">
+                        Channel Name
+                      </Text>
+                    }
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please select your channel name",
+                      },
+                    ]}
+                  >
+                    <Select
+                      placeholder="Select channel name"
+                      size="large"
+                      className="text-lg rounded-xl"
+                      style={{
+                        height: "56px", // exact same as h-14
+                        borderRadius: "12px",
+                      }}
+                      dropdownStyle={{
+                        borderRadius: "12px",
+                      }}
+                    >
+                      <Option value="kiosk">Kiosk</Option>
+                      <Option value="swiggy">Swiggy</Option>
+                      <Option value="zomato">Zomato</Option>
+                    </Select>
+                  </Form.Item>
                   {/* Submit Button */}
                   <Form.Item className="!mb-0 !mt-8">
                     <Button
