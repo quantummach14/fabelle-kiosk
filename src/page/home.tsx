@@ -213,6 +213,7 @@ const Home = () => {
         price: item.price,
       })),
     };
+    
     createdOrderMutate(payload);
   };
 

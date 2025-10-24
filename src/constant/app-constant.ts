@@ -1,4 +1,4 @@
-import { Check, Coffee, CreditCard, Smartphone, Users } from "lucide-react";
+import { Check, Coffee, CreditCard, MonitorSmartphone, Smartphone, Users } from "lucide-react";
 
 export const stepsArray = [
   { step: 0, title: "Products", icon: Coffee },
@@ -22,6 +22,13 @@ export const cardOptions = [
     icon: Smartphone,
     description: "UPI, Net Banking, Wallets",
     color: "bg-green-50 border-green-200 hover:border-green-400",
+  },
+  {
+    id: "third_party_pos",
+    label: "ThirdParty POS",
+    icon: MonitorSmartphone, // or another suitable icon
+    description: "Process payment via external POS system",
+    color: "bg-yellow-50 border-yellow-200 hover:border-yellow-400",
   },
   {
     id: "cash",
