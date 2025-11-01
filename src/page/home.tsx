@@ -214,44 +214,47 @@ const Home = () => {
       })),
     };
 
+    // console.log(payload)
+
     createdOrderMutate(payload);
   };
 
   const sendPaymentLinkHandler = () => {
-    if (selectedPayment === "upi") {
-      cancelOrderSocket.current = io(
-        import.meta.env.VITE_API_SERVER_LINK_SOCKET,
-        {
-          path: "/fabelle_backend/api/socket.io",
-        }
-      );
-      cancelOrderSocket.current.on("connect", () => {
-        cancelOrderSocket.current.emit("register", {
-          clientId: clientId,
-        }); // Register client ID on connection
-      });
-      cancelOrderSocket.current.on("on_register", (msg) => {
-        if (msg === "success") {
-          (async () => {
-            handlePaymentSubmit();
-          })();
-        }
-      });
-      let timeoutId2 = setTimeout(() => {
-        // toast.error("Cannot cancel at the moment, try again later");
-        cancelOrderSocket.current.emit("disconnectClient", clientId);
-        cancelOrderSocket.current.disconnect();
-        cancelOrderSocket.current = null;
-      }, 900000);
-      // on_update
-      cancelOrderSocket.current.on("on_payment_response", () => {
-        orderCreatedHandler();
-        clearTimeout(timeoutId2);
-        cancelOrderSocket.current.emit("disconnectClient", clientId);
-        cancelOrderSocket.current.disconnect();
-        cancelOrderSocket.current = null;
-      });
-    } else if (selectedPayment === "card") {
+    // if (selectedPayment === "upi") {
+    //   cancelOrderSocket.current = io(
+    //     import.meta.env.VITE_API_SERVER_LINK_SOCKET,
+    //     {
+    //       path: "/fabelle_backend/api/socket.io",
+    //     }
+    //   );
+    //   cancelOrderSocket.current.on("connect", () => {
+    //     cancelOrderSocket.current.emit("register", {
+    //       clientId: clientId,
+    //     }); // Register client ID on connection
+    //   });
+    //   cancelOrderSocket.current.on("on_register", (msg) => {
+    //     if (msg === "success") {
+    //       (async () => {
+    //         handlePaymentSubmit();
+    //       })();
+    //     }
+    //   });
+    //   let timeoutId2 = setTimeout(() => {
+    //     // toast.error("Cannot cancel at the moment, try again later");
+    //     cancelOrderSocket.current.emit("disconnectClient", clientId);
+    //     cancelOrderSocket.current.disconnect();
+    //     cancelOrderSocket.current = null;
+    //   }, 900000);
+    //   // on_update
+    //   cancelOrderSocket.current.on("on_payment_response", () => {
+    //     orderCreatedHandler();
+    //     clearTimeout(timeoutId2);
+    //     cancelOrderSocket.current.emit("disconnectClient", clientId);
+    //     cancelOrderSocket.current.disconnect();
+    //     cancelOrderSocket.current = null;
+    //   });
+    // }
+    if (selectedPayment === "card") {
       const values = form.getFieldsValue(true);
       const payload = {
         orderId,
@@ -785,9 +788,7 @@ const Home = () => {
                       onClick={sendPaymentLinkHandler}
                       className="bg-[#2d1603] border-[#2d1603] hover:bg-[#3d2613] hover:border-[#3d2613] h-16 px-12 text-xl font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
                     >
-                      {selectedPayment === "upi"
-                        ? "Send Payment Link"
-                        : "Create Order"}
+                       Create Order
                     </Button>
                   </div>
                 )}
