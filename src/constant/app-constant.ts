@@ -31,6 +31,13 @@ export const cardOptions = [
     color: "bg-yellow-50 border-yellow-200 hover:border-yellow-400",
   },
   {
+    id: "card_payment",
+    label: "Card Payment New",
+    icon: CreditCard, // or another suitable icon
+    description: "Pay with credit or debit card",
+    color: "bg-green-50 border-green-200 hover:border-green-400",
+  },
+  {
     id: "cash",
     label: "Other Method",
     icon: Users,
