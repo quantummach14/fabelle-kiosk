@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Home from "./page/home";
 import Login from "./page/login";
+import GrnPage from "./page/grnPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PublicRoute } from "./components/PublicRoute";
@@ -33,6 +34,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Home />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/grnPage"
+          element={
+            <ProtectedRoute>
+              <GrnPage />
             </ProtectedRoute>
           }
         />
