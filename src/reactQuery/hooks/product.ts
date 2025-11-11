@@ -4,6 +4,7 @@ import {
   createOrderApi,
   paymentLinkSendApi,
   productsListDataApi,
+  updateVinculumInvApi
 } from "../api";
 import { message } from "antd";
 
@@ -40,6 +41,22 @@ export const useCreateOrder = (successHandler) => {
     },
   });
 };
+
+export const useupdateVinculumInvApi = (successHandler) => {
+  return useMutation({
+    mutationFn: (data) => updateVinculumInvApi(data),
+    onSuccess: (data) => {
+      message.success("Inventory updated successfully!");
+      if (successHandler) successHandler(data);
+    },
+    onError: (error) => {
+      successHandler();
+      message.error(error?.message || "Something went wrong");
+    },
+  });
+};
+
+
 
 export const useCartPaymentOrder = (successHandler) => {
   return useMutation({

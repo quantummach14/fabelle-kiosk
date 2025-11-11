@@ -13,6 +13,9 @@ export const signInApi = (data) => apiMethods.POST("auth/login", data, headers);
 export const productsListDataApi = (data) =>
   apiMethods.POST(`kiosk/get-catalog`, data, headers);
 
+export const updateVinculumInvApi = (data) =>
+  apiMethods.POST(`kiosk/update/vinculum-inventory`, data, headers);
+
 export const paymentLinkSendApi = (data) =>
   apiMethods.POST(`kiosk/send/payment-link`, data, headers);
 
