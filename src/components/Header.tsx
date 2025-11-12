@@ -2,9 +2,10 @@ import { Badge, Button, Typography } from "antd";
 import { ArrowLeft, LogOut, ShoppingCart } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 import Logo from "../assets/logo.png";
+import { useNavigate } from "react-router-dom";
 const { Title } = Typography;
 
-type AppStep = "products" | "userInfo" | "payment" | "confirmation";
+type AppStep = "products" | "userInfo" | "payment" | "confirmation" | "grnPage";
 type HeaderProps = {
   currentStep: string;
   setCurrentStep: Dispatch<SetStateAction<AppStep>>;
@@ -22,6 +23,12 @@ const Header = ({
   setIsCartOpen,
   handleLogout,
 }: HeaderProps) => {
+  console.log("currentStep", currentStep);
+  const navigate = useNavigate(); // ✅ this line is required
+  const loginUserInfo = JSON.parse(localStorage.getItem("userInfo"));
+  console.log("loginUserInfo", loginUserInfo);
+  const selectedLocation = loginUserInfo?.location;
+
   return (
     <div className="bg-[#2d1603] text-white py-6 px-8 shadow-lg">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
@@ -45,6 +52,7 @@ const Header = ({
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Show Cart button only on Products page */}
           {currentStep === "products" && (
             <Badge
               count={getTotalItems()}
@@ -62,6 +70,37 @@ const Header = ({
               </Button>
             </Badge>
           )}
+
+          {/* GRN Page Button – only show when not already on GRN page */}
+          {currentStep !== "grnPage" ? (
+            <Button
+              type="primary"
+              size="large"
+              onClick={() =>
+                navigate(`/grnPage?location=${selectedLocation}`, {
+                  replace: true,
+                })
+              }
+              className="bg-white text-[#2d1603] border-white hover:bg-gray-100 hover:border-gray-100 h-12 px-6 text-lg font-semibold"
+            >
+              GRN Page
+            </Button>
+          ) : (
+            <Button
+              type="primary"
+              size="large"
+              onClick={() =>
+                navigate(`/home?location=${selectedLocation}`, {
+                  replace: true,
+                })
+              }
+              className="bg-white text-[#2d1603] border-white hover:bg-gray-100 hover:border-gray-100 h-12 px-6 text-lg font-semibold"
+            >
+              ← Back to Home
+            </Button>
+          )}
+
+          {/* Logout Button - Always visible */}
           <Button
             type="text"
             size="large"
@@ -69,7 +108,9 @@ const Header = ({
             onClick={handleLogout}
             className="text-white hover:bg-[#3d2613] border-none h-12 px-4"
             title="Logout"
-          ></Button>
+          >
+            Logout
+          </Button>
         </div>
       </div>
     </div>

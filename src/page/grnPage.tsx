@@ -61,7 +61,7 @@ const GrnPage = () => {
   const loginUserInfo = JSON.parse(localStorage.getItem("userInfo"));
 
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [currentStep, setCurrentStep] = useState<AppStep>("products");
+  const [currentStep, setCurrentStep] = useState<AppStep>("grnPage");
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   // - - - - - M A I N  C O N T E N T - - - - -
@@ -89,7 +89,7 @@ const GrnPage = () => {
 
   const resetApp = () => {
     setCart([]);
-    setCurrentStep("products");
+    setCurrentStep("grnPage");
     setIsCartOpen(false);
     form.resetFields();
   };
@@ -264,7 +264,7 @@ const GrnPage = () => {
 
       <div className="flex-1 p-8">
         {/* BACK BUTTON */}
-        {currentStep !== "products" && (
+        {/* {currentStep !== "products" && (
           <Button
             type="text"
             size="large"
@@ -278,9 +278,9 @@ const GrnPage = () => {
           >
             Back
           </Button>
-        )}
+        )} */}
 
-        {currentStep === "products" && (
+        {currentStep === "grnPage" && (
           <div className="max-w-7xl mx-auto">
             <SearchBar
               searchTerm={apiPayload.search}
@@ -335,7 +335,7 @@ const GrnPage = () => {
                               className="bg-[#2d1603] border-[#2d1603] hover:bg-[#3d2613] hover:border-[#3d2613]"
                               onClick={() => handleUpdateClick(product)}
                             >
-                              Update Vinculum
+                              Update GRN
                             </Button>
                           </div>,
                         ]}
@@ -374,7 +374,7 @@ const GrnPage = () => {
 
         {/* F O R M */}
         <Modal
-          title={`Update Vinculum - ${selectedProduct?.name || ""}`}
+          title={`Update GRN - ${selectedProduct?.name || ""}`}
           open={isModalOpen}
           onCancel={() => setIsModalOpen(false)}
           footer={null}
