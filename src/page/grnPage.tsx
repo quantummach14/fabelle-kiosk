@@ -182,6 +182,7 @@ const GrnPage = () => {
       location: selectedLocation,
       qty: values.qty,
       po_no: values.po_no,
+      ext_inbound_no: values.ext_inbound_no,
       invoice_no: values.invoice_no,
       bin: values.bin,
       mrp: values.mrp,
@@ -388,6 +389,7 @@ const GrnPage = () => {
               qty: "",
               po_no: "",
               invoice_no: "",
+              ext_inbound_no:"",
               bin: "",
               mrp: "",
               manufacturing_date: "",
@@ -417,7 +419,17 @@ const GrnPage = () => {
                 { required: true, message: "Please enter invoice number" },
               ]}
             >
-              <Input placeholder="Enter invoice number" />
+              <Input placeholder="Enter external inbound number" />
+            </Form.Item>
+
+             <Form.Item
+              label="Enter External Inbound Number"
+              name="ext_inbound_no"
+              rules={[
+                { required: true, message: "Please enter external inbound number" },
+              ]}
+            >
+              <Input placeholder="Enter external inbound number" />
             </Form.Item>
 
             <Form.Item
