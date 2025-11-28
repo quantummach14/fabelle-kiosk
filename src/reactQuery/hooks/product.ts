@@ -42,16 +42,30 @@ export const useCreateOrder = (successHandler) => {
   });
 };
 
-export const useupdateVinculumInvApi = (successHandler) => {
+// export const useupdateVinculumInvApi = (successHandler) => {
+//   return useMutation({
+//     mutationFn: (data) => updateVinculumInvApi(data),
+//     onSuccess: (data) => {
+//       message.success("Grn created successfully!");
+//       if (successHandler) successHandler(data);
+//     },
+//     onError: (error) => {
+//       successHandler();
+//       message.error(error?.message || "Something went wrong");
+//     },
+//   });
+// };
+
+export const useupdateVinculumInvApi = (onSuccessCb, onErrorCb) => {
   return useMutation({
     mutationFn: (data) => updateVinculumInvApi(data),
     onSuccess: (data) => {
-      message.success("Inventory updated successfully!");
-      if (successHandler) successHandler(data);
+      message.success("GRN created successfully!");
+      onSuccessCb?.(data);
     },
     onError: (error) => {
-      successHandler();
       message.error(error?.message || "Something went wrong");
+      onErrorCb?.(error);
     },
   });
 };

@@ -9,9 +9,12 @@ type AppStep = "products" | "userInfo" | "payment" | "confirmation" | "grnPage";
 type HeaderProps = {
   currentStep: string;
   setCurrentStep: Dispatch<SetStateAction<AppStep>>;
-  resetApp: () => void;
-  getTotalItems: () => number;
-  setIsCartOpen: (open: boolean) => void;
+  resetApp?: () => void;
+  resetGrnApp?: () => void;
+  getTotalItems?: () => number;
+  getGRNTotalItems?: () => number;
+  setIsCartOpen?: (open: boolean) => void;
+  setIsGrnCartOpen?: (open: boolean) => void;
   handleLogout: () => void;
 };
 
@@ -20,7 +23,9 @@ const Header = ({
   setCurrentStep,
   resetApp,
   getTotalItems,
+  getGRNTotalItems,
   setIsCartOpen,
+  setIsGrnCartOpen,
   handleLogout,
 }: HeaderProps) => {
   console.log("currentStep", currentStep);
@@ -52,55 +57,89 @@ const Header = ({
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Show Cart button only on Products page */}
+          {/* -------------------------------------------- */}
+          {/* PRODUCTS PAGE → Show PRODUCT CART BUTTON */}
+          {/* -------------------------------------------- */}
           {currentStep === "products" && (
-            <Badge
-              count={getTotalItems()}
-              size="default"
-              className="[&_.ant-badge-count]:bg-red-500"
-            >
+            <>
+              {/* Cart Button */}
+              <Badge
+                count={getTotalItems()}
+                size="default"
+                className="[&_.ant-badge-count]:bg-red-500"
+              >
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<ShoppingCart size={24} />}
+                  onClick={() => setIsCartOpen(true)}
+                  className="bg-white text-[#2d1603] border-white hover:bg-gray-100 hover:border-gray-100 h-12 px-6 text-lg font-semibold"
+                >
+                  Cart ({getTotalItems()})
+                </Button>
+              </Badge>
+
+              {/* GRN Page Button */}
               <Button
                 type="primary"
                 size="large"
-                icon={<ShoppingCart size={24} />}
-                onClick={() => setIsCartOpen(true)}
+                onClick={() =>
+                  navigate(`/grnPage?location=${selectedLocation}`, {
+                    replace: true,
+                  })
+                }
                 className="bg-white text-[#2d1603] border-white hover:bg-gray-100 hover:border-gray-100 h-12 px-6 text-lg font-semibold"
               >
-                Cart ({getTotalItems()})
+                GRN Page
               </Button>
-            </Badge>
+            </>
           )}
 
-          {/* GRN Page Button – only show when not already on GRN page */}
-          {currentStep !== "grnPage" ? (
-            <Button
-              type="primary"
-              size="large"
-              onClick={() =>
-                navigate(`/grnPage?location=${selectedLocation}`, {
-                  replace: true,
-                })
-              }
-              className="bg-white text-[#2d1603] border-white hover:bg-gray-100 hover:border-gray-100 h-12 px-6 text-lg font-semibold"
-            >
-              GRN Page
-            </Button>
-          ) : (
-            <Button
-              type="primary"
-              size="large"
-              onClick={() =>
-                navigate(`/home?location=${selectedLocation}`, {
-                  replace: true,
-                })
-              }
-              className="bg-white text-[#2d1603] border-white hover:bg-gray-100 hover:border-gray-100 h-12 px-6 text-lg font-semibold"
-            >
-              ← Back to Home
-            </Button>
+          {/* -------------------------------------------- */}
+          {/* GRN PAGE → Show GRN CART BUTTON + BACK BUTTON */}
+          {/* -------------------------------------------- */}
+          {currentStep === "grnPage" && (
+            <>
+              {/* GRN Cart Button */}
+              <Badge
+                count={getGRNTotalItems()}
+                size="default"
+                className="[&_.ant-badge-count]:bg-red-500"
+              >
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<ShoppingCart size={24} />}
+                  onClick={() => setIsGrnCartOpen(true)}
+                  className="bg-white text-[#2d1603] border-white hover:bg-gray-100 hover:border-gray-100 h-12 px-6 text-lg font-semibold"
+                >
+                  GRN Cart ({getGRNTotalItems()})
+                </Button>
+              </Badge>
+
+              {/* Back to Home */}
+              <Button
+                type="primary"
+                size="large"
+                onClick={() =>
+                  navigate(`/home?location=${selectedLocation}`, {
+                    replace: true,
+                  })
+                }
+                className="bg-white text-[#2d1603] border-white hover:bg-gray-100 hover:border-gray-100 h-12 px-6 text-lg font-semibold"
+              >
+                ← Back to Home
+              </Button>
+            </>
           )}
 
-          {/* Logout Button - Always visible */}
+          {/* -------------------------------------------- */}
+          {/* ALL OTHER PAGES → Show GRN PAGE BUTTON */}
+          {/* -------------------------------------------- */}
+
+          {/* -------------------------------------------- */}
+          {/* LOGOUT BUTTON – ALWAYS VISIBLE */}
+          {/* -------------------------------------------- */}
           <Button
             type="text"
             size="large"
