@@ -44,4 +44,11 @@ export const cardOptions = [
     description: "Cash or alternative payment",
     color: "bg-purple-50 border-purple-200 hover:border-purple-400",
   },
+  {
+    id: "partial_upi_cash",
+    label: "Other Method",
+    icon: Users,
+    description: "PartialCash/Partial UPI payment",
+    color: "bg-green-50 border-green-200 hover:border-green-400",
+  },
 ];

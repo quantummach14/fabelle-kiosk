@@ -33,6 +33,7 @@ import {
   useCreateOrder,
   usePaymentLinkSend,
   useProductListData,
+  useDownloadInvoice
 } from "../reactQuery/hooks/product";
 import NoImage from "../assets/noProductImage.png";
 import { FullScreenSpin } from "../components/full-spin";
@@ -65,6 +66,7 @@ const Home = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [currentStep, setCurrentStep] = useState<AppStep>("products");
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [orderNumber, setOrderId] = useState(null);
 
   // - - - - - M A I N  C O N T E N T - - - - -
 
@@ -84,6 +86,7 @@ const Home = () => {
   let cancelOrderSocket = useRef(null);
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>(null);
   const [paymentLoader, setPaymentLoader] = useState(false);
+  const { mutateAsync: downloadInvoice } = useDownloadInvoice();
 
   // - - - - - - - - - - F U N C T I O N S - - - - - - - - - -
 
@@ -170,10 +173,17 @@ const Home = () => {
     });
   };
 
-  const orderCreatedSuccessHandler = () => {
-    setPaymentLoader(false);
-    setCurrentStep("confirmation");
-  };
+ const orderCreatedSuccessHandler = (response) => {
+  setPaymentLoader(false);
+  console.log('order_number',response)
+
+  if (response?.data?.order_number) {
+    setOrderId(response.data.order_number);  // 👈 Order number set
+  }
+
+  setCurrentStep("confirmation");
+};
+
 
   const handlePaymentSubmit = () => {
     if (selectedPayment) {
@@ -218,6 +228,46 @@ const Home = () => {
 
     createdOrderMutate(payload);
   };
+
+
+const handleDownloadInvoice = async () => {
+  try {
+    console.log('orderId',orderNumber)
+    if (!orderNumber) {
+      message.error("Order number not found!");
+      return;
+    }
+
+    const payload = { orderNumber: orderNumber };
+
+    // 🔥 Call mutation
+    const response = await downloadInvoice(payload);
+    console.log('resfrom apidownload',response)
+
+    if (!response?.status) {
+      message.error(response.data.message || "Unable to fetch invoice");
+      return;
+    }
+
+    // 🔥 Invoice number from API
+    const invoiceNo = response.data.invoice;
+
+    if (!invoiceNo) {
+      message.error("Invoice number not found");
+      return;
+    }
+
+    // 🔥 Final PDF URL
+    const invoiceUrl = `https://prod.retailconnect.co.in/itcstore/kioskinv2025/${invoiceNo}.pdf`;
+
+    window.open(invoiceUrl, "_blank");
+
+  } catch (error) {
+    console.log(error);
+    message.error("Something went wrong while downloading invoice");
+  }
+};
+
 
   const sendPaymentLinkHandler = () => {
     // if (selectedPayment === "upi") {
@@ -363,13 +413,12 @@ const Home = () => {
                 <div key={item.step} className="flex items-center relative">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`relative w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-500 transform ${
-                        getStepNumber() > item.step
-                          ? "bg-green-500 text-white shadow-2xl scale-110"
-                          : getStepNumber() === item.step
+                      className={`relative w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-500 transform ${getStepNumber() > item.step
+                        ? "bg-green-500 text-white shadow-2xl scale-110"
+                        : getStepNumber() === item.step
                           ? "bg-white text-[#2d1603] shadow-2xl scale-110 ring-4 ring-white ring-opacity-50"
                           : "bg-[#4d3623] text-gray-400 shadow-lg"
-                      }`}
+                        }`}
                     >
                       {getStepNumber() > item.step ? (
                         <div className="relative">
@@ -383,13 +432,12 @@ const Home = () => {
                       )}
                     </div>
                     <Text
-                      className={`mt-4 font-bold text-lg transition-all duration-300 ${
-                        getStepNumber() > item.step
-                          ? "text-green-300"
-                          : getStepNumber() === item.step
+                      className={`mt-4 font-bold text-lg transition-all duration-300 ${getStepNumber() > item.step
+                        ? "text-green-300"
+                        : getStepNumber() === item.step
                           ? "text-white"
                           : "text-gray-500"
-                      }`}
+                        }`}
                     >
                       {item.title}
                     </Text>
@@ -399,11 +447,10 @@ const Home = () => {
                   </div>
                   {index < 3 && (
                     <div
-                      className={`w-32 h-2 mx-8 rounded-full transition-all duration-500 relative overflow-hidden ${
-                        getStepNumber() > item.step
-                          ? "bg-green-500 shadow-lg"
-                          : "bg-[#4d3623]"
-                      }`}
+                      className={`w-32 h-2 mx-8 rounded-full transition-all duration-500 relative overflow-hidden ${getStepNumber() > item.step
+                        ? "bg-green-500 shadow-lg"
+                        : "bg-[#4d3623]"
+                        }`}
                     />
                   )}
                 </div>
@@ -731,36 +778,32 @@ const Home = () => {
                             onClick={() =>
                               setSelectedPayment(method.id as PaymentMethod)
                             }
-                            className={`cursor-pointer transition-all duration-300 rounded-3xl border-3 p-8 text-center h-64 flex flex-col justify-center ${
-                              selectedPayment === method.id
-                                ? "border-[#2d1603] bg-[#2d1603] text-white shadow-2xl transform scale-105"
-                                : `${method.color} hover:shadow-xl hover:transform hover:scale-102`
-                            }`}
+                            className={`cursor-pointer transition-all duration-300 rounded-3xl border-3 p-8 text-center h-64 flex flex-col justify-center ${selectedPayment === method.id
+                              ? "border-[#2d1603] bg-[#2d1603] text-white shadow-2xl transform scale-105"
+                              : `${method.color} hover:shadow-xl hover:transform hover:scale-102`
+                              }`}
                           >
                             <method.icon
                               size={64}
-                              className={`mx-auto mb-6 ${
-                                selectedPayment === method.id
-                                  ? "text-white"
-                                  : "text-gray-600"
-                              }`}
+                              className={`mx-auto mb-6 ${selectedPayment === method.id
+                                ? "text-white"
+                                : "text-gray-600"
+                                }`}
                             />
                             <Title
                               level={3}
-                              className={`!mb-3 ${
-                                selectedPayment === method.id
-                                  ? "!text-white"
-                                  : "!text-gray-800"
-                              }`}
+                              className={`!mb-3 ${selectedPayment === method.id
+                                ? "!text-white"
+                                : "!text-gray-800"
+                                }`}
                             >
                               {method.label}
                             </Title>
                             <Text
-                              className={`text-lg ${
-                                selectedPayment === method.id
-                                  ? "text-gray-200"
-                                  : "text-gray-600"
-                              }`}
+                              className={`text-lg ${selectedPayment === method.id
+                                ? "text-gray-200"
+                                : "text-gray-600"
+                                }`}
                             >
                               {method.description}
                             </Text>
@@ -788,7 +831,7 @@ const Home = () => {
                       onClick={sendPaymentLinkHandler}
                       className="bg-[#2d1603] border-[#2d1603] hover:bg-[#3d2613] hover:border-[#3d2613] h-16 px-12 text-xl font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
                     >
-                       Create Order
+                      Create Order
                     </Button>
                   </div>
                 )}
@@ -822,21 +865,65 @@ const Home = () => {
                     </Text>
                   </div>
                 }
+
+                // ✅ Correct EXTRA Section
                 extra={
-                  <Button
-                    type="primary"
-                    size="large"
-                    onClick={resetApp}
-                    className="bg-[#2d1603] border-[#2d1603] hover:bg-[#3d2613] hover:border-[#3d2613] h-14 px-12 text-xl font-semibold rounded-xl"
-                  >
-                    Start New Order
-                  </Button>
+                  <div className="flex flex-col items-center gap-4">
+
+                    {/* DOWNLOAD INVOICE BUTTON */}
+                    <Button
+                      type="default"
+                      size="large"
+                      onClick={handleDownloadInvoice}
+                      className="bg-blue-600 border-blue-600 hover:bg-blue-700 hover:border-blue-700 h-14 px-12 text-xl font-semibold rounded-xl text-white"
+                    >
+                      Download Invoice
+                    </Button>
+
+                    {/* START NEW ORDER BUTTON */}
+                    <Button
+                      type="primary"
+                      size="large"
+                      onClick={resetApp}
+                      className="bg-[#2d1603] border-[#2d1603] hover:bg-[#3d2613] hover:border-[#3d2613] h-14 px-12 text-xl font-semibold rounded-xl"
+                    >
+                      Start New Order
+                    </Button>
+
+                  </div>
                 }
               />
             </Card>
           </div>
         )}
       </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       {/* Cart Drawer */}
       <Drawer
@@ -952,7 +1039,7 @@ const Home = () => {
           (selectedPayment !== "upi" && createdOrderIsPending)
         }
       />
-    </div>
+    </div >
   );
 };
 

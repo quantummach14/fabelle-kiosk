@@ -22,5 +22,8 @@ export const paymentLinkSendApi = (data) =>
 export const createOrderApi = (data) =>
   apiMethods.POST(`kiosk/create-order`, data, headers);
 
+export const downloadInvoiceApi = (data) =>
+  apiMethods.POST(`kiosk/download-invoice`, data, headers);
+
 export const cartPaymentOrderApi = (data) =>
   apiMethods.POST(`kiosk/payment/process-pos-payment`, data, headers);

@@ -4,7 +4,8 @@ import {
   createOrderApi,
   paymentLinkSendApi,
   productsListDataApi,
-  updateVinculumInvApi
+  updateVinculumInvApi,
+  downloadInvoiceApi
 } from "../api";
 import { message } from "antd";
 
@@ -31,16 +32,37 @@ export const usePaymentLinkSend = (setPaymentLoader) => {
   });
 };
 
+export const useDownloadInvoice = () => {
+  return useMutation({
+    mutationFn: (data) => downloadInvoiceApi(data),
+
+    onSuccess: (data) => {
+      console.log("Invoice fetched:", data);
+    },
+
+    onError: (error) => {
+      console.error("Download invoice error:", error);
+    },
+  });
+};
+
+
 export const useCreateOrder = (successHandler) => {
   return useMutation({
     mutationFn: (data) => createOrderApi(data),
-    onSuccess: (data) => successHandler(),
+
+    onSuccess: (response) => {
+      // 👈 response pass kar diya main page me
+      successHandler(response);
+    },
+
     onError: (error) => {
-      successHandler();
+      successHandler(null); 
       message.error(error?.message || "Something went wrong");
     },
   });
 };
+
 
 // export const useupdateVinculumInvApi = (successHandler) => {
 //   return useMutation({
