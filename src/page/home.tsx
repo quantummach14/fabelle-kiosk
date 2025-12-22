@@ -173,16 +173,16 @@ const Home = () => {
     });
   };
 
- const orderCreatedSuccessHandler = (response) => {
-  setPaymentLoader(false);
-  console.log('order_number',response)
+  const orderCreatedSuccessHandler = (response) => {
+    setPaymentLoader(false);
+    console.log('order_number', response)
 
-  if (response?.data?.order_number) {
-    setOrderId(response.data.order_number);  // 👈 Order number set
-  }
+    if (response?.data?.order_number) {
+      setOrderId(response.data.order_number);  // 👈 Order number set
+    }
 
-  setCurrentStep("confirmation");
-};
+    setCurrentStep("confirmation");
+  };
 
 
   const handlePaymentSubmit = () => {
@@ -230,43 +230,43 @@ const Home = () => {
   };
 
 
-const handleDownloadInvoice = async () => {
-  try {
-    console.log('orderId',orderNumber)
-    if (!orderNumber) {
-      message.error("Order number not found!");
-      return;
+  const handleDownloadInvoice = async () => {
+    try {
+      console.log('orderId', orderNumber)
+      if (!orderNumber) {
+        message.error("Order number not found!");
+        return;
+      }
+
+      const payload = { orderNumber: orderNumber };
+
+      // 🔥 Call mutation
+      const response = await downloadInvoice(payload);
+      console.log('resfrom apidownload', response)
+
+      if (!response?.status) {
+        message.error(response.data.message || "Unable to fetch invoice");
+        return;
+      }
+
+      // 🔥 Invoice number from API
+      const invoiceNo = response.data.invoice;
+
+      if (!invoiceNo) {
+        message.error("Invoice number not found");
+        return;
+      }
+
+      // 🔥 Final PDF URL
+      const invoiceUrl = `https://prod.retailconnect.co.in/itcstore/kioskinv2025/${invoiceNo}.pdf`;
+
+      window.open(invoiceUrl, "_blank");
+
+    } catch (error) {
+      console.log(error);
+      message.error("Something went wrong while downloading invoice");
     }
-
-    const payload = { orderNumber: orderNumber };
-
-    // 🔥 Call mutation
-    const response = await downloadInvoice(payload);
-    console.log('resfrom apidownload',response)
-
-    if (!response?.status) {
-      message.error(response.data.message || "Unable to fetch invoice");
-      return;
-    }
-
-    // 🔥 Invoice number from API
-    const invoiceNo = response.data.invoice;
-
-    if (!invoiceNo) {
-      message.error("Invoice number not found");
-      return;
-    }
-
-    // 🔥 Final PDF URL
-    const invoiceUrl = `https://prod.retailconnect.co.in/itcstore/kioskinv2025/${invoiceNo}.pdf`;
-
-    window.open(invoiceUrl, "_blank");
-
-  } catch (error) {
-    console.log(error);
-    message.error("Something went wrong while downloading invoice");
-  }
-};
+  };
 
 
   const sendPaymentLinkHandler = () => {
@@ -653,10 +653,13 @@ const handleDownloadInvoice = async () => {
                         { required: true, message: "Please enter your city" },
                       ]}
                     >
-                      <Input
-                        placeholder="Enter your city"
+                      <Select
+                        placeholder="Select your city"
                         className="h-14 text-lg rounded-xl"
-                      />
+                      >
+                        <Option value="bangalore">Bangalore</Option>
+                        <Option value="MUMBAI">Mumbai</Option>
+                      </Select>
                     </Form.Item>
 
                     <Form.Item
