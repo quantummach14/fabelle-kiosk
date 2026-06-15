@@ -167,6 +167,8 @@ const Home = () => {
     setCurrentStep("payment");
   };
 
+  
+
   // P A Y M E N T  M E T H O D  C H O S E
 
   const addToCart = (product: Product) => {
