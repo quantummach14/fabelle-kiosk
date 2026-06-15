@@ -281,6 +281,7 @@ const Home = () => {
 
       window.open(invoiceUrl, "_blank");
 
+      
     } catch (error) {
       console.log(error);
       message.error("Something went wrong while downloading invoice");
