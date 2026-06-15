@@ -400,6 +400,7 @@ const Home = () => {
     setAppliedCoupon(null);
     setCouponCode("");
   };
+  
 
   //  - - - - - - - - - - - - O T H E R - - - - - - - - - - - -
 
