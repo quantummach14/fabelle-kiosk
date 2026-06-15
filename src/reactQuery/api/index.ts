@@ -27,3 +27,6 @@ export const downloadInvoiceApi = (data) =>
 
 export const cartPaymentOrderApi = (data) =>
   apiMethods.POST(`kiosk/payment/process-pos-payment`, data, headers);
+
+export const validateCouponApi = (data) =>
+  apiMethods.POST(`coupon/validate-coupon`, data, headers);

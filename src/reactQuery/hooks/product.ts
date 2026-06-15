@@ -5,7 +5,8 @@ import {
   paymentLinkSendApi,
   productsListDataApi,
   updateVinculumInvApi,
-  downloadInvoiceApi
+  downloadInvoiceApi,
+  validateCouponApi
 } from "../api";
 import { message } from "antd";
 
@@ -92,7 +93,14 @@ export const useupdateVinculumInvApi = (onSuccessCb, onErrorCb) => {
   });
 };
 
-
+export const useValidateCoupon = () => {
+  return useMutation({
+    mutationFn: (data) => validateCouponApi(data),
+    onError: (error) => {
+      message.error(error?.message || "Invalid coupon code");
+    },
+  });
+};
 
 export const useCartPaymentOrder = (successHandler) => {
   return useMutation({
