@@ -149,6 +149,8 @@ const Home = () => {
     }));
   };
 
+  
+
   const getFilteredProducts = () =>
     productsList.filter((product) => {
       return product;
