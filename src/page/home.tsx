@@ -24,7 +24,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -41,6 +41,11 @@ import { FullScreenSpin } from "../components/full-spin";
 import { v4 as uuidv4 } from "uuid";
 import { io } from "socket.io-client";
 import { debounce } from "../utils/global-func";
+import {
+  AppliedCoupon,
+  calculateCouponBreakdown,
+  getLineDiscountForItem,
+} from "../utils/coupon";
 import { AppStep, CartItem, PaymentMethod, Product } from "../constant/types";
 import { cardOptions, stepsArray } from "../constant/app-constant";
 const { Option } = Select;
@@ -91,14 +96,12 @@ const Home = () => {
 
   // - - - - - C O U P O N - - - - -
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<{
-    code: string;
-    discountType: "flat" | "percentage";
-    discountValue: number;
-    discountAmount: number;
-    finalAmount: number;
-    description?: string;
-  } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+
+  const couponBreakdown = useMemo(
+    () => calculateCouponBreakdown(cart, appliedCoupon),
+    [cart, appliedCoupon]
+  );
 
   // - - - - - - - - - - F U N C T I O N S - - - - - - - - - -
 
@@ -228,19 +231,26 @@ const Home = () => {
       paymentMode: selectedPayment,
       custPincode: values.pincode,
       channelName: values.channel,
-      originalAmount: getTotalPrice(),
-      discountAmount: getDiscountAmount(),
-      amount: getFinalTotal(),
+      originalAmount: couponBreakdown.originalAmount,
+      discountAmount: couponBreakdown.discountAmount,
+      amount: couponBreakdown.finalAmount,
       couponCode: appliedCoupon?.code || null,
       discountType: appliedCoupon?.discountType || null,
       discountValue: appliedCoupon?.discountValue || null,
       location: loginUserInfo.location,
-      items: cart.map((item) => ({
-        skuCode: item.skuCode,
-        skuName: item.name,
-        quantity: item.quantity,
-        price: item.price,
-      })),
+      items: cart.map((item) => {
+        const lineDiscount = getLineDiscountForItem(couponBreakdown, item.skuCode);
+        return {
+          skuCode: item.skuCode,
+          skuName: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          originalAmount: lineDiscount?.originalAmount ?? item.price * item.quantity,
+          discountAmount: lineDiscount?.discountAmount ?? 0,
+          discountType: appliedCoupon?.discountType ?? null,
+          finalAmount: lineDiscount?.finalAmount ?? item.price * item.quantity,
+        };
+      }),
     };
 
     // console.log(payload)
@@ -281,7 +291,6 @@ const Home = () => {
 
       window.open(invoiceUrl, "_blank");
 
-      
     } catch (error) {
       console.log(error);
       message.error("Something went wrong while downloading invoice");
@@ -328,7 +337,7 @@ const Home = () => {
       const values = form.getFieldsValue(true);
       const payload = {
         orderId,
-        amount: getTotalPrice(),
+        amount: couponBreakdown.finalAmount,
         custPhone: values.mobile,
       };
       cartPaymentOrderMutate(payload);
@@ -376,7 +385,16 @@ const Home = () => {
       return;
     }
     validateCouponMutate(
-      { coupon_code: couponCode.trim(), order_amount: getTotalPrice() } as any,
+      {
+        coupon_code: couponCode.trim(),
+        order_amount: couponBreakdown.originalAmount,
+        items: cart.map((item) => ({
+          skuCode: item.skuCode,
+          skuName: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      } as any,
       {
         onSuccess: (data: any) => {
           if (data?.success) {
@@ -384,8 +402,6 @@ const Home = () => {
               code: data?.data?.coupon_code,
               discountType: data?.data?.discount_type,
               discountValue: parseFloat(data?.data?.discount_value),
-              discountAmount: data?.data?.discount_amount,
-              finalAmount: data?.data?.final_amount,
               description: data?.data?.description,
             });
             message.success(data?.message || "Coupon applied successfully!");
@@ -404,16 +420,11 @@ const Home = () => {
 
   //  - - - - - - - - - - - - O T H E R - - - - - - - - - - - -
 
-  const getTotalPrice = () =>
-    cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  const getTotalPrice = () => couponBreakdown.originalAmount;
 
-  const getDiscountAmount = () =>
-    appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const getDiscountAmount = () => couponBreakdown.discountAmount;
 
-  const getFinalTotal = () =>
-    appliedCoupon
-      ? appliedCoupon.finalAmount
-      : parseFloat(getTotalPrice().toFixed(2));
+  const getFinalTotal = () => couponBreakdown.finalAmount;
 
   const handleCheckout = () => {
     if (cart.length > 0) {
@@ -421,6 +432,13 @@ const Home = () => {
       setCurrentStep("userInfo");
     }
   };
+
+  useEffect(() => {
+    if (cart.length === 0 && appliedCoupon) {
+      setAppliedCoupon(null);
+      setCouponCode("");
+    }
+  }, [cart.length, appliedCoupon]);
 
   useEffect(() => {
     debounce(() => {
