@@ -287,7 +287,7 @@ const Home = () => {
       }
 
       // 🔥 Final PDF URL
-      const invoiceUrl = `https://prod.retailconnect.co.in/itcstore/kioskinv2025/${invoiceNo}.pdf`;
+      const invoiceUrl = `https://prod.retailconnect.co.in/itcstore/kioskinv2026/${invoiceNo}.pdf`;
 
       window.open(invoiceUrl, "_blank");
 
