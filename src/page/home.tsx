@@ -231,6 +231,7 @@ const Home = () => {
       paymentMode: selectedPayment,
       custPincode: values.pincode,
       channelName: values.channel,
+      custGstNo: values.gstNo || null,
       originalAmount: couponBreakdown.originalAmount,
       discountAmount: couponBreakdown.discountAmount,
       amount: couponBreakdown.finalAmount,
@@ -794,6 +795,38 @@ const Home = () => {
                     <Input
                       placeholder="Enter your email"
                       className="h-14 text-lg rounded-xl"
+                    />
+                  </Form.Item>
+
+                  {/* GST No */}
+                  <Form.Item
+                    name="gstNo"
+                    label={
+                      <Text className="text-lg font-semibold">
+                        GST No <span style={{ color: "#888", fontWeight: 400, fontSize: "14px" }}>(Optional)</span>
+                      </Text>
+                    }
+                    rules={[
+                      {
+                        validator: (_, value) => {
+                          if (!value) return Promise.resolve();
+                          const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+                          return gstPattern.test(value)
+                            ? Promise.resolve()
+                            : Promise.reject(new Error("Please enter a valid GST number (e.g. 22AAAAA0000A1Z5)"));
+                        },
+                      },
+                    ]}
+                  >
+                    <Input
+                      placeholder="Enter GST number (optional)"
+                      className="h-14 text-lg rounded-xl"
+                      maxLength={15}
+                      style={{ textTransform: "uppercase" }}
+                      onChange={(e) => {
+                        const upper = e.target.value.toUpperCase();
+                        form.setFieldValue("gstNo", upper);
+                      }}
                     />
                   </Form.Item>
 
