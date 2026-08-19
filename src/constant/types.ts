@@ -35,4 +35,20 @@ export interface UserInfo {
 }
 
 export type PaymentMethod = "card" | "upi" | "cash" | null;
-export type AppStep = "products" | "userInfo" | "payment" | "confirmation" | "grnPage" | "grnfinal";
+export type AppStep = "products" | "userInfo" | "payment" | "confirmation" | "grnPage" | "grnfinal" | "coupons";
+
+export interface Coupon {
+  id: number;
+  code: string;
+  discount_type: "percentage" | "flat";
+  discount_value: number;
+  min_order_value: number | null;
+  max_discount_amount: number | null;
+  usage_limit: number | null;
+  used_count: number;
+  valid_from: string | null;
+  valid_until: string | null;
+  is_active: boolean;
+  description: string | null;
+  created_at: string;
+}

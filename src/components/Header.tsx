@@ -33,6 +33,7 @@ const Header = ({
   const loginUserInfo = JSON.parse(localStorage.getItem("userInfo"));
   console.log("loginUserInfo", loginUserInfo);
   const selectedLocation = loginUserInfo?.location;
+  const isAdmin = ["seller", "admin", "super_admin"].includes(loginUserInfo?.role);
 
   return (
     <div className="bg-[#2d1603] text-white py-6 px-8 shadow-lg">
@@ -92,6 +93,18 @@ const Header = ({
               >
                 GRN Page
               </Button>
+
+              {/* Coupons Button — admin/super_admin only */}
+              {isAdmin && (
+                <Button
+                  type="primary"
+                  size="large"
+                  onClick={() => navigate(`/coupons`)}
+                  className="bg-white text-[#2d1603] border-white hover:bg-gray-100 hover:border-gray-100 h-12 px-6 text-lg font-semibold"
+                >
+                  Coupons
+                </Button>
+              )}
             </>
           )}
 
