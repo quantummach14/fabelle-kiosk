@@ -30,3 +30,11 @@ export const cartPaymentOrderApi = (data) =>
 
 export const validateCouponApi = (data) =>
   apiMethods.POST(`coupon/validate-coupon`, data, headers);
+
+export const getCouponsApi = () => apiMethods.GET(`coupon/list`, {}, headers);
+
+export const createCouponApi = (data) =>
+  apiMethods.POST(`coupon/create`, data, headers);
+
+export const toggleCouponApi = (data) =>
+  apiMethods.POST(`coupon/toggle`, data, headers);
