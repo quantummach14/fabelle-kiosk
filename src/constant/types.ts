@@ -35,7 +35,7 @@ export interface UserInfo {
 }
 
 export type PaymentMethod = "card" | "upi" | "cash" | null;
-export type AppStep = "products" | "userInfo" | "payment" | "confirmation" | "grnPage" | "grnfinal" | "coupons";
+export type AppStep = "products" | "userInfo" | "payment" | "confirmation" | "grnPage" | "grnfinal" | "coupons" | "addProduct";
 
 export interface Coupon {
   id: number;
