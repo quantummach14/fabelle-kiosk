@@ -105,6 +105,18 @@ const Header = ({
                   Coupons
                 </Button>
               )}
+
+              {/* Add Product Button — seller/admin/super_admin only */}
+              {isAdmin && (
+                <Button
+                  type="primary"
+                  size="large"
+                  onClick={() => navigate(`/add-product`)}
+                  className="bg-white text-[#2d1603] border-white hover:bg-gray-100 hover:border-gray-100 h-12 px-6 text-lg font-semibold"
+                >
+                  Add Product
+                </Button>
+              )}
             </>
           )}
 

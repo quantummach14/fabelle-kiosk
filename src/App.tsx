@@ -3,6 +3,7 @@ import Home from "./page/home";
 import Login from "./page/login";
 import GrnPage from "./page/grnPage";
 import CouponsPage from "./page/coupons";
+import AddProductPage from "./page/addProduct";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PublicRoute } from "./components/PublicRoute";
@@ -53,6 +54,16 @@ function App() {
             <ProtectedRoute>
               <AdminRoute>
                 <CouponsPage />
+              </AdminRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/add-product"
+          element={
+            <ProtectedRoute>
+              <AdminRoute>
+                <AddProductPage />
               </AdminRoute>
             </ProtectedRoute>
           }

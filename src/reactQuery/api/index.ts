@@ -38,3 +38,6 @@ export const createCouponApi = (data) =>
 
 export const toggleCouponApi = (data) =>
   apiMethods.POST(`coupon/toggle`, data, headers);
+
+export const createProductApi = (data) =>
+  apiMethods.POST(`product/create`, data, headers);
