@@ -44,6 +44,8 @@ import { debounce } from "../utils/global-func";
 import {
   AppliedCoupon,
   calculateCouponBreakdown,
+  cartHasEligibleItem,
+  couponMeetsMinimum,
   getLineDiscountForItem,
 } from "../utils/coupon";
 import { AppStep, CartItem, PaymentMethod, Product } from "../constant/types";
@@ -98,9 +100,16 @@ const Home = () => {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
 
+  const activeCoupon = useMemo(() => {
+    if (!appliedCoupon || cart.length === 0) return null;
+    if (!cartHasEligibleItem(cart, appliedCoupon)) return null;
+    if (!couponMeetsMinimum(cart, appliedCoupon)) return null;
+    return appliedCoupon;
+  }, [appliedCoupon, cart]);
+
   const couponBreakdown = useMemo(
-    () => calculateCouponBreakdown(cart, appliedCoupon),
-    [cart, appliedCoupon]
+    () => calculateCouponBreakdown(cart, activeCoupon),
+    [cart, activeCoupon]
   );
 
   // - - - - - - - - - - F U N C T I O N S - - - - - - - - - -
@@ -235,12 +244,16 @@ const Home = () => {
       originalAmount: couponBreakdown.originalAmount,
       discountAmount: couponBreakdown.discountAmount,
       amount: couponBreakdown.finalAmount,
-      couponCode: appliedCoupon?.code || null,
-      discountType: appliedCoupon?.discountType || null,
-      discountValue: appliedCoupon?.discountValue || null,
+      couponCode: activeCoupon?.code || null,
+      discountType: activeCoupon?.discountType || null,
+      discountValue: activeCoupon?.discountValue || null,
       location: loginUserInfo.location,
       items: cart.map((item) => {
-        const lineDiscount = getLineDiscountForItem(couponBreakdown, item.skuCode);
+        const lineDiscount = getLineDiscountForItem(
+          couponBreakdown,
+          item.id,
+          item.skuCode
+        );
         return {
           skuCode: item.skuCode,
           skuName: item.name,
@@ -248,7 +261,7 @@ const Home = () => {
           price: item.price,
           originalAmount: lineDiscount?.originalAmount ?? item.price * item.quantity,
           discountAmount: lineDiscount?.discountAmount ?? 0,
-          discountType: appliedCoupon?.discountType ?? null,
+          discountType: activeCoupon?.discountType ?? null,
           finalAmount: lineDiscount?.finalAmount ?? item.price * item.quantity,
         };
       }),
@@ -404,6 +417,8 @@ const Home = () => {
               discountType: data?.data?.discount_type,
               discountValue: parseFloat(data?.data?.discount_value),
               description: data?.data?.description,
+              applicableSkus: data?.data?.applicable_skus || null,
+              minOrderValue: parseFloat(data?.data?.min_order_value) || 0,
             });
             message.success(data?.message || "Coupon applied successfully!");
           } else {
@@ -435,11 +450,21 @@ const Home = () => {
   };
 
   useEffect(() => {
-    if (cart.length === 0 && appliedCoupon) {
-      setAppliedCoupon(null);
-      setCouponCode("");
+    if (!appliedCoupon || activeCoupon) return;
+    const minimum = parseFloat(String(appliedCoupon.minOrderValue ?? 0)) || 0;
+    const belowMinimum = minimum > 0 && !couponMeetsMinimum(cart, appliedCoupon);
+    setAppliedCoupon(null);
+    setCouponCode("");
+    if (cart.length > 0 && belowMinimum) {
+      message.info(
+        `Coupon removed. Minimum order value of ₹${minimum} is required.`
+      );
+    } else if (cart.length > 0) {
+      message.info(
+        "Coupon removed. The product it applies to is no longer in the cart."
+      );
     }
-  }, [cart.length, appliedCoupon]);
+  }, [appliedCoupon, activeCoupon, cart]);
 
   useEffect(() => {
     debounce(() => {
@@ -1074,7 +1099,16 @@ const Home = () => {
               </div>
             ) : (
               <Space direction="vertical" size="large" className="w-full">
-                {cart.map((item) => (
+                {cart.map((item) => {
+                  const lineDiscount = getLineDiscountForItem(
+                    couponBreakdown,
+                    item.id,
+                    item.skuCode
+                  );
+                  const lineOriginal =
+                    lineDiscount?.originalAmount ?? item.price * item.quantity;
+                  const lineFinal = lineDiscount?.finalAmount ?? lineOriginal;
+                  return (
                   <Card key={item.id} size="small" className="shadow-sm">
                     <div className="flex items-center gap-4">
                       <img
@@ -1086,9 +1120,20 @@ const Home = () => {
                         <Title level={5} className="!mb-1">
                           {item.name}
                         </Title>
-                        <Text className="text-[#2d1603] font-bold text-lg">
-                          ₹{item.price.toFixed(2)}
-                        </Text>
+                        {lineDiscount && lineDiscount.discountAmount > 0 ? (
+                          <div>
+                            <Text className="text-gray-400 line-through text-sm">
+                              ₹{lineOriginal.toFixed(2)}
+                            </Text>
+                            <Text className="text-[#2d1603] font-bold text-lg block">
+                              ₹{lineFinal.toFixed(2)}
+                            </Text>
+                          </div>
+                        ) : (
+                          <Text className="text-[#2d1603] font-bold text-lg">
+                            ₹{lineOriginal.toFixed(2)}
+                          </Text>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -1119,7 +1164,8 @@ const Home = () => {
                       </div>
                     </div>
                   </Card>
-                ))}
+                  );
+                })}
               </Space>
             )}
           </div>
@@ -1128,16 +1174,21 @@ const Home = () => {
             <div className="border-t p-6 bg-gray-50">
               {/* Coupon Section */}
               <div className="mb-4">
-                {appliedCoupon ? (
+                {activeCoupon ? (
                   <div className="flex items-center justify-between bg-green-50 border border-green-300 rounded-xl px-4 py-3">
                     <div>
                       <Text className="text-green-700 font-semibold text-sm">
-                        🎉 Coupon <span className="uppercase">{appliedCoupon.code}</span> applied
+                        🎉 Coupon <span className="uppercase">{activeCoupon.code}</span> applied
                       </Text>
                       <br />
                       <Text className="text-green-600 text-xs">
                         You save ₹{getDiscountAmount().toFixed(2)}
                       </Text>
+                      {activeCoupon.applicableSkus?.length ? (
+                        <Text className="text-green-600 text-xs block">
+                          Applies only to selected luxury bars
+                        </Text>
+                      ) : null}
                     </div>
                     <Button
                       type="text"
@@ -1169,7 +1220,7 @@ const Home = () => {
               </div>
 
               {/* Price Breakdown */}
-              {appliedCoupon && (
+              {activeCoupon && (
                 <div className="mb-3 space-y-1">
                   <div className="flex justify-between items-center">
                     <Text className="text-gray-500">Subtotal:</Text>
@@ -1177,9 +1228,9 @@ const Home = () => {
                   </div>
                   <div className="flex justify-between items-center">
                     <Text className="text-green-600">
-                      Discount ({appliedCoupon.discountType === "percentage"
-                        ? `${appliedCoupon.discountValue}%`
-                        : `₹${appliedCoupon.discountValue}`}):
+                      Discount ({activeCoupon.discountType === "percentage"
+                        ? `${activeCoupon.discountValue}%`
+                        : `₹${activeCoupon.discountValue}`}):
                     </Text>
                     <Text className="text-green-600">- ₹{getDiscountAmount().toFixed(2)}</Text>
                   </div>
