@@ -36,6 +36,7 @@ import {
   useDownloadInvoice,
   useValidateCoupon,
 } from "../reactQuery/hooks/product";
+import { validateCouponApi } from "../reactQuery/api";
 import NoImage from "../assets/noProductImage.png";
 import { FullScreenSpin } from "../components/full-spin";
 import { v4 as uuidv4 } from "uuid";
@@ -448,6 +449,62 @@ const Home = () => {
       setCurrentStep("userInfo");
     }
   };
+
+  const appliedCouponRef = useRef<AppliedCoupon | null>(null);
+  appliedCouponRef.current = appliedCoupon;
+  const couponCheckId = useRef(0);
+  const cartKey = cart
+    .map((item) => `${item.skuCode}:${item.quantity}:${item.price}`)
+    .join("|");
+
+  useEffect(() => {
+    const coupon = appliedCouponRef.current;
+    if (!coupon || cart.length === 0) return;
+    const checkId = ++couponCheckId.current;
+    validateCouponApi({
+      coupon_code: coupon.code,
+      order_amount: cart.reduce(
+        (total, item) => total + item.price * item.quantity,
+        0
+      ),
+      items: cart.map((item) => ({
+        skuCode: item.skuCode,
+        skuName: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    })
+      .then((data: any) => {
+        if (checkId !== couponCheckId.current) return;
+        if (!appliedCouponRef.current) return;
+        if (!data?.success) {
+          setAppliedCoupon(null);
+          setCouponCode("");
+          message.info(
+            `Coupon removed. ${data?.message || "It no longer applies to this cart."}`
+          );
+          return;
+        }
+        setAppliedCoupon((current) =>
+          current && current.code === coupon.code
+            ? {
+                ...current,
+                applicableSkus: data?.data?.applicable_skus || null,
+                minOrderValue: parseFloat(data?.data?.min_order_value) || 0,
+              }
+            : current
+        );
+      })
+      .catch((error: any) => {
+        if (checkId !== couponCheckId.current) return;
+        if (!appliedCouponRef.current) return;
+        setAppliedCoupon(null);
+        setCouponCode("");
+        message.info(
+          `Coupon removed. ${error?.message || "It no longer applies to this cart."}`
+        );
+      });
+  }, [cartKey]);
 
   useEffect(() => {
     if (!appliedCoupon || activeCoupon) return;
@@ -1100,14 +1157,7 @@ const Home = () => {
             ) : (
               <Space direction="vertical" size="large" className="w-full">
                 {cart.map((item) => {
-                  const lineDiscount = getLineDiscountForItem(
-                    couponBreakdown,
-                    item.id,
-                    item.skuCode
-                  );
-                  const lineOriginal =
-                    lineDiscount?.originalAmount ?? item.price * item.quantity;
-                  const lineFinal = lineDiscount?.finalAmount ?? lineOriginal;
+                  const lineOriginal = item.price * item.quantity;
                   return (
                   <Card key={item.id} size="small" className="shadow-sm">
                     <div className="flex items-center gap-4">
@@ -1120,20 +1170,9 @@ const Home = () => {
                         <Title level={5} className="!mb-1">
                           {item.name}
                         </Title>
-                        {lineDiscount && lineDiscount.discountAmount > 0 ? (
-                          <div>
-                            <Text className="text-gray-400 line-through text-sm">
-                              ₹{lineOriginal.toFixed(2)}
-                            </Text>
-                            <Text className="text-[#2d1603] font-bold text-lg block">
-                              ₹{lineFinal.toFixed(2)}
-                            </Text>
-                          </div>
-                        ) : (
-                          <Text className="text-[#2d1603] font-bold text-lg">
-                            ₹{lineOriginal.toFixed(2)}
-                          </Text>
-                        )}
+                        <Text className="text-[#2d1603] font-bold text-lg">
+                          ₹{lineOriginal.toFixed(2)}
+                        </Text>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
