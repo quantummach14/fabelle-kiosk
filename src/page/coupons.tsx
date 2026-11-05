@@ -69,6 +69,7 @@ const CouponsPage = () => {
         valid_from: validFrom ? validFrom.toISOString() : null,
         valid_until: validUntil ? validUntil.toISOString() : null,
         description: values.description || null,
+        applicable_skus: values.applicable_skus?.trim() || null,
       });
     });
   };
@@ -117,6 +118,12 @@ const CouponsPage = () => {
       dataIndex: "valid_until",
       key: "valid_until",
       render: (val: string) => (val ? dayjs(val).format("DD MMM YYYY") : "-"),
+    },
+    {
+      title: "Applicable SKUs",
+      dataIndex: "applicable_skus",
+      key: "applicable_skus",
+      render: (val: string | null) => val || "All items",
     },
     {
       title: "Description",
@@ -236,6 +243,13 @@ const CouponsPage = () => {
 
           <Form.Item name="validity" label="Validity Period">
             <RangePicker style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item
+            name="applicable_skus"
+            label="Applicable SKUs (comma separated, leave blank for all items)"
+          >
+            <Input.TextArea rows={2} placeholder="e.g. FCH10801P, FCH20116P" />
           </Form.Item>
 
           <Form.Item name="description" label="Description">
