@@ -1225,7 +1225,7 @@ const Home = () => {
                       </Text>
                       {activeCoupon.applicableSkus?.length ? (
                         <Text className="text-green-600 text-xs block">
-                          Applies only to selected luxury bars
+                          Applies only to selected products
                         </Text>
                       ) : null}
                     </div>

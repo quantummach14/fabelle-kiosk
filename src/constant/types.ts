@@ -50,5 +50,6 @@ export interface Coupon {
   valid_until: string | null;
   is_active: boolean;
   description: string | null;
+  applicable_skus: string | null;
   created_at: string;
 }
